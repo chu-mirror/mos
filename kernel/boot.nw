@@ -1,0 +1,108 @@
+\section{Boot}
+This chapter defined boot process of \.{mos}.
+
+Booting consists of two parts,
+according to in which mode the hart are running.
+Start from machine mode, then switch to supervisor mode.
+
+\subsection{In machine mode}
+Start with assembly code, turn to C~code after initialization of stacks.
+
+<<entry.S>>=
+.section .text
+_entry:
+	<<initialize registers>>
+	<<prepare per CPU stack>>
+	<<continue with C code>>
+spin:
+	j spin
+
+@
+{\tt K201} do not provide a boot loader,
+so do this step manually.
+<<initialize registers>>=
+# do not need this step for now
+
+@ 
+A 4096-byte stack per CPU,
+stacks is defined in succeeding C~code.
+
+<<prepare per CPU stack>>=
+csrr a1, mhartid
+
+la sp, stack0
+li a0, 4096
+addi a1, a1, 1
+mul a0, a0, a1
+add sp, sp, a0
+
+@
+The interface of succeeding C~code is [[start]].
+<<continue with C code>>=
+call start
+
+@
+Now, turn to C~code.
+<<start.c>>=
+#include "riscv.h"
+#include "param.h"
+#include "memlayout.h"
+<<start: refs>>
+
+@
+[[stack0]] is defined here.
+<<start.c>>=
+__attribute__ ((aligned (16))) char stack0[4096 * NCPU];
+@ %def stack0
+
+@ [[start]] is the main routine of boot in machine mode.
+<<start.c>>=
+void
+start()
+{
+	<<set up initial status>>
+	<<prepare for switching to supervisor mode>>
+	<<go to debug point>> /* test some code in machine mode before going on */
+	ASM("mret");
+}
+@ %def start
+
+@
+To ensure following booting continue correctly, should do:
+
+1. disable paging of supervisor mode for now, the pagatable has not built yet.\par
+2. delegate interrupts and exceptions to supervisor mode to avoid accidents.
+
+<<set up initial status>>=
+w_satp(0); /* disable paging */
+w_medeleg(0xffff);
+/* delegate interrupts and exceptions to supervisor mode */
+w_mideleg(0xffff);
+w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
+
+w_tp(r_mhartid()); /* set thread pointer to correct value */
+
+@
+This step's purpose is to set up as if [[start]] is called from 
+supervisor mode.
+<<prepare for switching to supervisor mode>>=
+w_mstatus((r_mstatus() & ~MSTATUS_MPP_MASK) | MSTATUS_MPP_S );
+w_mepc((uint64)main); /* return to [[main]] */
+
+<<start: refs>>=
+void main();
+
+<<go to debug point>>=
+main();
+
+@
+\subsection{In supervisor mode}
+
+<<main.c>>=
+
+void
+main()
+{
+}
+
+@ %def main
