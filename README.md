@@ -8,4 +8,7 @@ just list a TODO list here to remind myself.
 ## TODO
 
 1. driver of UART, print something(maybe _Hello world!_).
+	- print "Hel" successfully
+
+2. log system, record(wait for file system) or print debug information.
 
