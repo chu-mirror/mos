@@ -99,10 +99,16 @@ main();
 \subsection{In supervisor mode}
 
 <<main.c>>=
+#include "uart.h"
 
 void
 main()
 {
+	uartputc('H');
+	uartputc('e');
+	uartputc('l');
+
+	while(1);
 }
 
 @ %def main

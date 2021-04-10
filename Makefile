@@ -1,25 +1,31 @@
 -include env.mk
 
 K = kernel
+S = src
+D = doc
 
 OBJS = \
-	$K/entry.o $K/start.o $K/main.o
+	$S/entry.o $S/start.o $S/main.o \
+	$S/uart.o
 
 CHAPS = \
 	$K/boot.nw \
-	$K/spec.nw
+	$K/spec.nw \
+	$K/driver.nw
 
-boot_subs = $K/entry.S $K/start.c $K/main.c
-spec_subs = $K/types.h $K/param.h $K/memlayout.h $K/riscv.h
+boot_subs = $S/entry.S $S/start.c $S/main.c
+spec_subs = $S/types.h $S/param.h $S/memlayout.h $S/riscv.h
+driver_subs = $S/uart.h $S/uart.c
 
 SRC = \
 	${boot_subs} \
-	${spec_subs}
+	${spec_subs} \
+	${driver_subs}
 
 
 .SUFFIXES: .pdf .nw
 .tex.pdf:
-	cd doc; pdflatex ../$*; pdflatex ../$*; pdflatex ../$*
+	cd $D; pdflatex ../$*; pdflatex ../$*; pdflatex ../$*
 
 .nw.tex:
 	noweave -index -latex $< > $@
@@ -28,30 +34,32 @@ SRC = \
 	notangle -R$@ $< > $@.c
 	${CC} -g -o $@ $@.c
 
+.PHONY: src doc qemu test clean clobber
 
-$K/kernel: ${OBJS} kernel.ld
-	${LD} ${LDFLAGS} -T kernel.ld -o $K/kernel ${OBJS}
+mos-kernel: src ${OBJS} mos.ld
+	${LD} ${LDFLAGS} -T mos.ld -o $@ ${OBJS}
 
-src: ${SRC}
-	@[ -d src ] || mkdir src && echo "Creating directory src..."
-	cp ${SRC} -t src
+src:
+	@[ -d $S ] || mkdir $S && echo "Creating directory $S..."
+	make ${SRC}
 
-docs:
-	@[ -d doc ] || mkdir doc && echo "Creating directory doc..."
+doc:
+	@[ -d $D ] || mkdir $D && echo "Creating directory $D..."
 	make ${CHAPS:.nw=.pdf}
 
-qemu: $K/kernel 
-	$(QEMU) $(QEMUOPTS)
+qemu: mos-kernel 
+	${QEMU} ${QEMUOPTS} -kernel mos-kernel
 
 test: src
-	cp src/* -t ~/src/xv6-riscv/kernel
+	cp $S/* -t ~/src/xv6-riscv/kernel
 
 clean: 
-	cd $K; ${RM} *.c *.S *.h *.o *.d kernel
-	cd ${DOC}; ${RM} *.aux *.log
+	cd $D; ${RM} *.aux *.log
+	cd $S; ${RM} *
 
 clobber: clean
-	rm -rf doc src
+	${RM} -r $S $D
+	${RM} mos-kernel
 
 ${boot_subs} : $K/boot.nw
 	notangle -R${@F} $< > $@
@@ -59,6 +67,9 @@ ${boot_subs} : $K/boot.nw
 ${spec_subs} : $K/spec.nw
 	notangle -R${@F} $< > $@
 
-$K/start.o : $K/riscv.h $K/memlayout.h $K/param.h
-$K/riscv.h : $K/types.h
+${driver_subs} : $K/driver.nw
+	notangle -R${@F} $< > $@
+
+$S/start.o : $S/riscv.h $S/memlayout.h $S/param.h
+$S/riscv.h : $S/types.h
 
