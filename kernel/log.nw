@@ -1,0 +1,125 @@
+@
+\section{Log}
+
+<<log.c>>=
+#include <stdarg.h>
+
+#include "types.h"
+#include "uart.h"
+<<log: prototypes>>
+<<log: functions>>
+
+<<log.h>>=
+#ifndef MOS_LOG
+#define MOS_LOG
+
+<<log: exported interface>>
+
+#endif
+
+<<log: prototypes>>=
+<<log: exported interface>>
+
+@
+\subsection{Formatted Output}
+
+<<log: functions>>=
+void
+printf(char *fmt, ...)
+{
+	va_list ap;
+	char *cp;
+
+	va_start(ap, fmt);
+	for (cp = fmt; *cp != '\0'; cp++) {
+		char c = *cp;
+		<<for each kinds of [[c]]>>
+	}
+
+}
+
+<<for each kinds of [[c]]>>=
+if (c != '%') {
+	putc(c);
+} else {
+	<<print formatted value>>
+}
+
+<<print formatted value>>=
+{
+	c = *(++cp);
+
+	switch (c) {
+	case 'd':
+		printdec(va_arg(ap, int));
+		break;
+	case 'p':
+		printptr(va_arg(ap, uint64));
+		break;
+	case 's':
+		printstr(va_arg(ap, char *));
+		break;
+	}
+}
+
+<<log: functions>>=
+static void
+printdec(int n)
+{
+	char s[20] = { [19] = '\0'};
+	char *cp = s + 18;
+
+	if (n < 0) {
+		putc('-');
+		n = -n;
+	} else if (n == 0) {
+		putc('0');
+	}
+	while (n) {
+		*(cp--) = n%10 + '0';
+		n /= 10;
+	}
+	printstr(cp+1);
+}
+
+static void
+printptr(uint64 n) 
+{
+	int i;
+	char s[17] = { [16] = '\0' };
+	for (i = 0; i < 16; i++) {
+		int r = n % 16;
+		s[15-i] = r>9 ? r-10 + 'A' : r + '0';
+		n >>= 4;
+	}
+	printstr(s);
+}
+
+static void
+printstr(char *s)
+{
+	for (; *s != '\0'; s++) {
+		putc(*s);
+	}
+}
+
+<<log: prototypes>>=
+static void printdec(int);
+static void printptr(uint64);
+static void printstr(char *);
+
+
+<<log: exported interface>>=
+void printf(char *, ...);
+
+@
+Use [[putc]] to interact with outside.
+<<log: functions>>=
+static void
+putc(char c)
+{
+	uartputc((uint8) c);
+}
+
+<<log: prototypes>>=
+static void putc(char);

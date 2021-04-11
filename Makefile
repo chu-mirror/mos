@@ -6,21 +6,25 @@ D = doc
 
 OBJS = \
 	$S/entry.o $S/start.o $S/main.o \
-	$S/uart.o
+	$S/uart.o \
+	$S/log.o
 
 CHAPS = \
 	$K/boot.nw \
 	$K/spec.nw \
-	$K/driver.nw
+	$K/driver.nw \
+	$K/log.nw
 
 boot_subs = $S/entry.S $S/start.c $S/main.c
 spec_subs = $S/types.h $S/param.h $S/memlayout.h $S/riscv.h
 driver_subs = $S/uart.h $S/uart.c
+log_subs = $S/log.h $S/log.c
 
 SRC = \
 	${boot_subs} \
 	${spec_subs} \
-	${driver_subs}
+	${driver_subs} \
+	${log_subs}
 
 
 .SUFFIXES: .pdf .nw
@@ -29,10 +33,6 @@ SRC = \
 
 .nw.tex:
 	noweave -index -latex $< > $@
-
-.nw:
-	notangle -R$@ $< > $@.c
-	${CC} -g -o $@ $@.c
 
 .PHONY: src doc qemu test clean clobber
 
@@ -68,6 +68,9 @@ ${spec_subs} : $K/spec.nw
 	notangle -R${@F} $< > $@
 
 ${driver_subs} : $K/driver.nw
+	notangle -R${@F} $< > $@
+
+${log_subs} : $K/log.nw
 	notangle -R${@F} $< > $@
 
 $S/start.o : $S/riscv.h $S/memlayout.h $S/param.h

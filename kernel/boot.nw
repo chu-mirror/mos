@@ -100,13 +100,13 @@ main();
 
 <<main.c>>=
 #include "uart.h"
+#include "log.h"
 
 void
 main()
 {
-	uartputc('H');
-	uartputc('e');
-	uartputc('l');
+	uartinit();
+	printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", -10, 16*15, "I lo\n");
 
 	while(1);
 }
