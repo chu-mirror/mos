@@ -12,3 +12,4 @@ just list a TODO list here to remind myself.
 
 2. log system, record(wait for file system) or print debug information.
 
+3. rewrite all codes in a better way.
