@@ -1,78 +1,83 @@
 -include env.mk
 
-K = kernel
+L = lit
 S = src
-D = doc
+T = tool
 
-OBJS = \
-	$S/entry.o $S/start.o $S/main.o \
-	$S/uart.o \
-	$S/log.o
-
+# The order of chapters maters
 CHAPS = \
-	$K/boot.nw \
-	$K/spec.nw \
-	$K/driver.nw \
-	$K/log.nw
+	$L/des.nw \
+	$L/prod.nw \
+	$L/boot.nw \
+	$L/driver.nw \
+	$L/log.nw \
+	$L/tool.nw
 
-boot_subs = $S/entry.S $S/start.c $S/main.c
-spec_subs = $S/types.h $S/param.h $S/memlayout.h $S/riscv.h
-driver_subs = $S/uart.h $S/uart.c
-log_subs = $S/log.h $S/log.c
+DOC = mos.pdf
 
-SRC = \
-	${boot_subs} \
-	${spec_subs} \
-	${driver_subs} \
-	${log_subs}
+C_SRC = \
+	$S/start.c $S/main.c $S/uart.c $S/log.c
 
+ASM_SRC = \
+	$S/entry.S
 
-.SUFFIXES: .pdf .nw
+SRC = ${ASM_SRC} ${C_SRC}
+
+SCRIPTS = \
+	$T/autolayout.sh $T/module.m4
+
+MODULES = ${ASM_SRC:.S=} ${C_SRC:.c=}
+OBJS = ${MODULES:=.o}
+
+TOOLS = \
+	$T/autolayout
+
+.SUFFIXES: .pdf
 .tex.pdf:
-	cd $D; pdflatex ../$*; pdflatex ../$*; pdflatex ../$*
+	pdflatex $*; pdflatex $*; pdflatex $*
 
-.nw.tex:
-	noweave -index -latex $< > $@
+.PHONY: all doc qemu clean clobber tool prep gen-layout
 
-.PHONY: src doc qemu test clean clobber
+all: mos-kernel
 
-mos-kernel: src ${OBJS} mos.ld
+doc: ${DOC}
+
+mos-kernel: tool ${OBJS} mos.ld
 	${LD} ${LDFLAGS} -T mos.ld -o $@ ${OBJS}
 
-src:
+prep:
 	@[ -d $S ] || mkdir $S && echo "Creating directory $S..."
-	make ${SRC}
+	@[ -d $T ] || mkdir $T && echo "Creating directory $T..."
 
-doc:
-	@[ -d $D ] || mkdir $D && echo "Creating directory $D..."
-	make ${CHAPS:.nw=.pdf}
+${DOC:.pdf=.tex}: ${CHAPS}
+	noweave -index -latex ${CHAPS} > $@
+
+tool: prep ${TOOLS}
 
 qemu: mos-kernel 
 	${QEMU} ${QEMUOPTS} -kernel mos-kernel
 
-test: src
-	cp $S/* -t ~/src/xv6-riscv/kernel
-
 clean: 
-	cd $D; ${RM} *.aux *.log
-	cd $S; ${RM} *
+	${RM} *.aux *.log *.tex
+	${RM} ${OBJS}
+	${RM} ${TOOLS} layout
 
 clobber: clean
-	${RM} -r $S $D
-	${RM} mos-kernel
+	${RM} -r $S $T
+	${RM} mos-kernel ${DOC}
 
-${boot_subs} : $K/boot.nw
-	notangle -R${@F} $< > $@
+${SRC}: ${CHAPS} layout 
+	notangle -R${@F} ${CHAPS} layout > $@
 
-${spec_subs} : $K/spec.nw
-	notangle -R${@F} $< > $@
+${SCRIPTS}: ${CHAPS}
+	notangle -R${@F} ${CHAPS} > $@
 
-${driver_subs} : $K/driver.nw
-	notangle -R${@F} $< > $@
+layout: $T/autolayout
+	${RM} layout
+	@for f in ${SRC}; do \
+		echo "generating layout for $$f..."; \
+		./$T/autolayout $$f >> layout; \
+	done
 
-${log_subs} : $K/log.nw
-	notangle -R${@F} $< > $@
-
-$S/start.o : $S/riscv.h $S/memlayout.h $S/param.h
-$S/riscv.h : $S/types.h
+$T/autolayout.sh: $T/module.m4
 

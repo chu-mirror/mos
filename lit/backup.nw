@@ -1,0 +1,35 @@
+
+@
+Configure clock interrupts, a scratch area per CPU should be allocated, 
+and the interval of coming interrupts are specified by macro [[CLINT_INTERVAL]].
+
+The structure of a scratch area:
+
+$0\ldots2$: space for [[timervec]] to save register\par
+$3$: address of {\tt CLINT MTIMECMP} register\par
+$4$: desired interval (in cycles) between timer interrupts
+
+<<ask for clock interrupts>>=
+{
+#define CLINT_INTERVAL 1000000 /* about 1/10th second in qemu */
+
+	static uint64 timer_scratch[NCPU][5];
+	int id = r_mhartid(); /* configuration per CPU */
+
+	*(uint64 *)CLINT_MTIMECMP(id) =
+		*(uint64 *)CLINT_MTIME + CLINT_INTERVAL;
+
+	uint64 *scratch = timer_scratch[id];
+	scratch[3] = CLINT_MTIMECMP(id);
+	scratch[4] = CLINT_INTERVAL;
+	w_mscratch((uint64)scratch);
+
+	w_mtvec((uint64)timervec);
+	w_mstatus(r_mstatus() | MSTATUS_MIE);
+	w_mie(r_mie() | MIE_MTIE);
+#undef CLINT_INTERVAL
+}
+<<start: refs>>=
+extern void timervec();
+@ %def timervec
+

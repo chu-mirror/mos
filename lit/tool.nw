@@ -1,0 +1,80 @@
+@
+\section{Tools}
+
+I'm trying to organize codes at a high level of abstraction,
+seems like coding with natural language,
+but the compiler do not understand my genius.
+Although The literate programming tools help somewhat,
+there's still a need to do some dirty works myself.
+
+This chapter described some tools aiding description of {\tt MOS}. 
+Some develepers tend to seperate this kind of stuffs from the main part of documenting,
+but I decide to keep a whole chapter to talk about the tools, 
+which I used to refine writings.
+
+@
+\subsection{Common Part}
+Some scripts should be aware of where other files are.
+
+<<shell's header>>=
+#!/bin/sh
+
+lit_dir=lit
+tool_dir=tool
+src_dir=src
+
+@
+\subsection{Autogenerate Layout}
+
+Generate source code's layout to help {\tt noweb} to produce final codes understood by
+compiler or assembler, there are two types now,
+assambly~code and C~code.
+
+<<autolayout.sh>>=
+<<shell's header>>
+
+suf=$(expr $1 : '[[:graph:]]*\.\([[:alnum:]]*\)') 
+m4 -DMODULE=$(basename $1 .$suf) -DSUFFIX=$suf $tool_dir/module.m4
+
+@
+<<module.m4>>=
+ifelse(
+SUFFIX, c, dnl C code's layout
+@<<MODULE.c@>>=
+@<<MODULE's repertoire@>>
+@<<MODULE's macros@>>
+@<<MODULE's data@>>
+@<<MODULE's prototypes@>>
+@<<MODULE's functions@>>
+
+@<<MODULE's repertoire@>>=
+
+@<<MODULE's macros@>>=
+
+@<<MODULE's data@>>=
+
+@<<MODULE's prototypes@>>=
+@<<MODULE's interface@>>
+@<<MODULE's port@>>
+
+@<<MODULE's interface@>>=
+
+@<<MODULE's port@>>=
+
+@<<MODULE's functions@>>= 
+,
+SUFFIX, S, dnl assembly code's layout
+@<<MODULE.S@>>=
+@<<MODULE's repertoire@>>
+.section text
+@<<MODULE's text@>>
+.section data
+@<<MODULE's data@>>
+
+@<<MODULE's repertoire@>>=
+
+@<<MODULE's text@>>=
+@<<MODULE's functions@>>
+
+@<<MODULE's data@>>=
+)

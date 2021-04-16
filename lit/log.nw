@@ -1,29 +1,15 @@
 @
 \section{Log}
 
-<<log.c>>=
+<<log's repertoire>>=
+<<repertoire of driver layer>>
+<<uart's interface>>
 #include <stdarg.h>
-
-#include "types.h"
-#include "uart.h"
-<<log: prototypes>>
-<<log: functions>>
-
-<<log.h>>=
-#ifndef MOS_LOG
-#define MOS_LOG
-
-<<log: exported interface>>
-
-#endif
-
-<<log: prototypes>>=
-<<log: exported interface>>
 
 @
 \subsection{Formatted Output}
 
-<<log: functions>>=
+<<log's functions>>=
 void
 printf(char *fmt, ...)
 {
@@ -37,6 +23,11 @@ printf(char *fmt, ...)
 	}
 
 }
+
+@ %def printf
+
+<<log's interface>>=
+void printf(char *, ...);
 
 <<for each kinds of [[c]]>>=
 if (c != '%') {
@@ -62,7 +53,7 @@ if (c != '%') {
 	}
 }
 
-<<log: functions>>=
+<<log's functions>>=
 static void
 printdec(int n)
 {
@@ -103,23 +94,19 @@ printstr(char *s)
 	}
 }
 
-<<log: prototypes>>=
+<<log's prototypes>>=
 static void printdec(int);
 static void printptr(uint64);
 static void printstr(char *);
 
-
-<<log: exported interface>>=
-void printf(char *, ...);
-
 @
 Use [[putc]] to interact with outside.
-<<log: functions>>=
+<<log's functions>>=
 static void
 putc(char c)
 {
 	uartputc((uint8) c);
 }
 
-<<log: prototypes>>=
+<<log's prototypes>>=
 static void putc(char);

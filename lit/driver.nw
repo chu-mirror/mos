@@ -4,33 +4,15 @@
 @
 \subsection{UART}
 
-<<uart.c>>=
-#include "memlayout.h"
-#include "types.h"
-
-<<uart: macros>>
-<<uart: prototypes>>
-<<uart: functions>>
-
-<<uart.h>>=
-#ifndef MOS_UART_DRIVER
-#define MOS_UART_DRIVER
-
-#include "types.h"
-
-<<uart: exported interface>>
-
-#endif
-
-<<uart: prototypes>>=
-<<uart: exported interface>>
+<<uart's repertoire>>=
+<<repertoire of driver layer>>
 
 @
-The UART control registers,
-see http://byterunner.com/16550.html for more information.
+The {\tt UART} control registers,
+see {\tt http://byterunner.com/16550.html} for more information.
 Register labeled by 0 and 2 has different meanings for write vs write.
 
-<<uart: register bit maps>>=
+<<uart's control register bit maps>>=
 
 #define RHR	0	/* receive holding register */
 #define THR	0	/* transmit holding register */
@@ -59,31 +41,33 @@ Register labeled by 0 and 2 has different meanings for write vs write.
 #define LSR_R_READY (1<<0) /* receive data ready */
 #define LSR_T_EMPTY (1<<5) /* transmit holding empty */
 
-<<uart: macros>>=
-<<uart: register bit maps>>
+<<uart's macros>>=
+<<uart's control register bit maps>>
 
 @
 [[uartinit]] initialize uart controler,
 disable all interrupts for now.
-<<uart: functions>>=
+<<uart's functions>>=
 void
 uartinit()
 {
 	REG(IER) = 0x00; /* disable all interrupts */
 }
 
-<<uart: exported interface>>=
+@ %def uartinit
+
+<<uart's interface>>=
 void uartinit();
 
 @
 Define a macro to help dealing with registers.
-<<uart: macros>>=
+<<uart's macros>>=
 #define REG(r) (*(uint8 *)(UART0 + (r)))
 
 @ %def REG
 
 @
-<<uart: functions>>=
+<<uart's functions>>=
 void
 uartputc(uint8 c)
 {
@@ -91,6 +75,8 @@ uartputc(uint8 c)
 	REG(THR) = c;
 }
 
-<<uart: exported interface>>=
+@ %def uartputc
+
+<<uart's interface>>=
 void uartputc(uint8);
 

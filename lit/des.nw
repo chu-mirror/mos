@@ -1,0 +1,81 @@
+@
+\section{Introduction}
+This document described an experimental operating system named {\tt MOS},
+written as a ``literate'' program.
+I will explain what a ``literate'' program is soon,
+but it's still recommended to read Donald~E. Knuth's paper for more information 
+if you are interested by the word ``literate'' which seems weird here
+or not satisfied by my explanation.
+
+Trying to externalize the inspiration I got from {\sl MIT~6.033 Computer System Engineering},
+after a lot of consideration, I chose this special approach to start my adventure.
+To write an operating system with literate programming, by this way,
+to illustrate the useful abstractions(described in {\sl MIT~6.033}) explicitly in my code.
+Now, concisely, what do those abstractions mean after all?
+I hope you can read that textbook as I do, but if so, there's nothing left to me to talk about.
+To avoid this awkwardness, please keep reading, 
+this document may be an introductory material to that fantastic course.
+
+All code run in a corresponding execution environment, the environment decided what the code takes effect on
+and how the code takes effect. Start from this concept, there's a useful abstraction, {\it interpreter}.
+An interpreter provide a {\it repertoire} and an {\it environment reference} to code,
+a repertoire defines the set of actions the code can invoke,
+an environment reference tells the code where the enviroment is.
+Then, we can have a program's components running in different environments
+to establish concepts of {\it layer} and {\it module}.
+
+A module uses the repertoire which its interpreter provides to build a set of new actions.
+The actions can be merged into other modules' repertoire in a controlled way, and be named {\it interface}.
+A set of modules can be composed into a layer. 
+Layers have a structure of stack, lower layer provides actions to higher.
+There are two kinds of interfaces, one merged to the modules of the same layer,
+another exported to higher layer to achieve a higher level of abstraction,
+the latter has a special name, {\it port}.
+Modules running in each layer use a base repertoire consists of lower layer's modules' ports.
+
+Another important relation between module and layer is the modules themselves can be composed with layers,
+because all modules provide a universal interface.
+The outside world do not care about how a module composed, as far as it behave the same as the most simple ones.
+It's useful to divide a complex module to smaller and simpler ones.
+
+It's time to introduce {\tt MOS}'s architecture.
+{\tt MOS} is divided into three layers, lower to upper, {\it driver}, {\it subsystem}, {\it user space}.
+Layer driver face the machine directly, 
+a module in this layer does not have to be a driver of some specific device,
+I use this name just to indicate that the modules run in a rather low-level execution environment,
+for example, boot process, interrupt handling, context switching.
+Layer subsystem is the main part of {\tt MOS}, 
+filesystem, task manager and memory management are all in this layer.
+Layer user space should be treated sperately from other parts of operating system,
+for it does not follow the universal interface described above.
+
+Now let me explain why I choose literate programming as the approach to do this work.
+A program, in our humans view, it's just a set of specification,
+this part of code described some functions, that part described how to find the names be in use.
+We perceive the spirit behind this program, no matter what order the codes are represented,
+but machine can not, you should specify header files before using them,
+you should declare a function's prototype before others which used it.
+All these limitations lead to a burden in our understanding of a program,
+you stare at a long list of declarations of functions, header files,
+and notice that it's completely nonesense, then you search for the entry point, [[main]] function in C,
+try to get a clue helping you, after you find one, it's just another thing wait for explanation,
+now it's your task to follow this clue do a recursive inspection
+until you sure that you have completely understood,
+what a pain, why not place the entry point at the first line of code?
+
+Literate programming is a style of programming aims showing codes in a way like normal literatures.
+All codes, oh, I do not like this word, let's call them specifications, 
+can be arranged in any order you like.
+As I have explained, it's good for understanding programs,
+you may ask, ``what if I am the creater of that program?'',
+but, if you agree with me,
+the hardest work we programmers are facing day by day is understanding ourselves' codes,
+here the point.
+
+I use in this document a uncommon organization of codes. 
+Code segments that rely on repertoire are put all together at chapter~{\sl Procedures},
+in this way, I can give a detailed description on the execution environment first
+to all codes run in a specific layer, and readers can get a good feeling
+of how the codes be executed.
+Benefit from {\tt noweb}, it's easy to check code segments when you read one module's specification 
+and want to see details.

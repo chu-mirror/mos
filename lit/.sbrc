@@ -1,0 +1,7 @@
+sb-begin
+-include:
+	~/.sbs/s-c
+-abbre:
+	repdri	'repertoire of driver layer'
+	repsub	'repertoire of subsystem layer'
+sb-end
