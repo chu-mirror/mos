@@ -38,11 +38,11 @@ TOOLS = \
 
 .PHONY: all doc qemu clean clobber tool prep gen-layout
 
-all: mos-kernel
+all: tool mos-kernel
 
 doc: ${DOC}
 
-mos-kernel: tool ${OBJS} mos.ld
+mos-kernel: ${OBJS} mos.ld
 	${LD} ${LDFLAGS} -T mos.ld -o $@ ${OBJS}
 
 prep:
