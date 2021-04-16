@@ -66,9 +66,9 @@ SUFFIX, c, dnl C code's layout
 SUFFIX, S, dnl assembly code's layout
 @<<MODULE.S@>>=
 @<<MODULE's repertoire@>>
-.section text
+.section .text
 @<<MODULE's text@>>
-.section data
+.section .data
 @<<MODULE's data@>>
 
 @<<MODULE's repertoire@>>=
