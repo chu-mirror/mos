@@ -2,8 +2,7 @@
 \section{Log}
 
 <<log's repertoire>>=
-<<repertoire of driver layer>>
-<<uart's interface>>
+<<repertoire of subsystem layer>>
 #include <stdarg.h>
 
 @

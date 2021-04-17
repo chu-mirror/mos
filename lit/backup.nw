@@ -9,6 +9,9 @@ $0\ldots2$: space for [[timervec]] to save register\par
 $3$: address of {\tt CLINT MTIMECMP} register\par
 $4$: desired interval (in cycles) between timer interrupts
 
+<<start's repertoire>>=
+<<kernelvec's interface>>
+
 <<ask for clock interrupts>>=
 {
 #define CLINT_INTERVAL 1000000 /* about 1/10th second in qemu */
@@ -29,7 +32,4 @@ $4$: desired interval (in cycles) between timer interrupts
 	w_mie(r_mie() | MIE_MTIE);
 #undef CLINT_INTERVAL
 }
-<<start: refs>>=
-extern void timervec();
-@ %def timervec
 

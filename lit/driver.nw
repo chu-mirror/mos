@@ -1,11 +1,15 @@
 @
 \section{Drivers}
+Copied verbatim from other projects.
 
 @
 \subsection{UART}
 
 <<uart's repertoire>>=
 <<repertoire of driver layer>>
+
+<<repertoire of subsystem layer>>=
+<<uart's port>>
 
 @
 The {\tt UART} control registers,
@@ -53,16 +57,15 @@ uartinit()
 {
 	REG(IER) = 0x00; /* disable all interrupts */
 }
-
 @ %def uartinit
 
-<<uart's interface>>=
+<<uart's port>>=
 void uartinit();
 
 @
 Define a macro to help dealing with registers.
 <<uart's macros>>=
-#define REG(r) (*(uint8 *)(UART0 + (r)))
+#define REG(r) (*(volatile uint8 *)(UART0 + (r)))
 
 @ %def REG
 
@@ -77,6 +80,6 @@ uartputc(uint8 c)
 
 @ %def uartputc
 
-<<uart's interface>>=
+<<uart's port>>=
 void uartputc(uint8);
 

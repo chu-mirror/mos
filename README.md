@@ -14,3 +14,6 @@ just list a TODO list here to remind myself.
 
 3. rewrite all codes in a better way.
 	- well done
+
+4. build concept of process 
+

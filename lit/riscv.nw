@@ -21,7 +21,7 @@ Some useful macros.
 @
 Which hart (core) is this?
 <<riscv: macros and inline functions>>=
-inline uint64 r_mhartid()
+static inline uint64 r_mhartid()
 {
 	uint64 x;
 	ASM_R("csrr %0, mhartid");
@@ -40,14 +40,14 @@ Machine Status Register, mstatus.
 #define MSTATUS_MPP_U (0L << 11)
 #define MSTATUS_MIE (1L << 3)	 /* machine-mode interrupt enable. */
 
-inline uint64 r_mstatus()
+static inline uint64 r_mstatus()
 {
 	uint64 x;
 	ASM_R("csrr %0, mstatus");
 	return x;
 }
 
-inline void w_mstatus(uint64 x)
+static inline void w_mstatus(uint64 x)
 {
 	ASM_W("csrw mstatus, %0");
 }
@@ -60,7 +60,7 @@ Machine exception program counter,
 holds the instruction address to which a return from
 exception will go.
 <<riscv: macros and inline functions>>=
-inline void w_mepc(uint64 x)
+static inline void w_mepc(uint64 x)
 {
 	ASM_W("csrw mepc, %0");
 }
@@ -77,14 +77,14 @@ Supervisor Status Register, sstatus.
 #define SSTATUS_SIE (1L << 1)	/* Supervisor Interrupt Enable */
 #define SSTATUS_UIE (1L << 0)	/* User Interrupt Enable */
 
-inline uint64 r_sstatus()
+static inline uint64 r_sstatus()
 {
 	uint64 x;
 	ASM_R("csrr %0, sstatus");
 	return x;
 }
 
-inline void w_sstatus(uint64 x)
+static inline void w_sstatus(uint64 x)
 {
 	ASM_W("csrw sstatus, %0");
 }
@@ -95,14 +95,14 @@ inline void w_sstatus(uint64 x)
 @
 Supervisor Interrupt Pending.
 <<riscv: macros and inline functions>>=
-inline uint64 r_sip()
+static inline uint64 r_sip()
 {
 	uint64 x;
 	ASM_R("csrr %0, sip");
 	return x;
 }
 
-inline void w_sip(uint64 x)
+static inline void w_sip(uint64 x)
 {
 	ASM_W("csrw sip, %0");
 }
@@ -116,14 +116,14 @@ Supervisor Interrupt Enable.
 #define SIE_STIE (1L << 5)	/* timer */
 #define SIE_SSIE (1L << 1)	/* software */
 
-inline uint64 r_sie()
+static inline uint64 r_sie()
 {
 	uint64 x;
 	ASM_R("csrr %0, sie");
 	return x;
 }
 
-inline void w_sie(uint64 x)
+static inline void w_sie(uint64 x)
 {
 	ASM_W("csrw sie, %0");
 }
@@ -138,14 +138,14 @@ Machine-mode Interrupt Enable.
 #define MIE_MTIE (1L << 7)	/* timer */
 #define MIE_MSIE (1L << 3)	/* software */
 
-inline uint64 r_mie()
+static inline uint64 r_mie()
 {
 	uint64 x;
 	ASM_R("csrr %0, mie");
 	return x;
 }
 
-inline void w_mie(uint64 x)
+static inline void w_mie(uint64 x)
 {
 	ASM_W("csrw mie, %0");
 }
@@ -158,12 +158,12 @@ Supervisor exception program counter, holds the
 instruction address to which a return from
 exception will go.
 <<riscv: macros and inline functions>>=
-inline void w_sepc(uint64 x)
+static inline void w_sepc(uint64 x)
 {
 	ASM_W("csrw sepc, %0");
 }
 
-inline uint64 r_sepc()
+static inline uint64 r_sepc()
 {
 	uint64 x;
 	ASM_R("csrr %0, sepc");
@@ -175,14 +175,14 @@ inline uint64 r_sepc()
 @
 Machine Exception Delegation.
 <<riscv: macros and inline functions>>=
-inline uint64 r_medeleg()
+static inline uint64 r_medeleg()
 {
 	uint64 x;
 	ASM_R("csrr %0, medeleg");
 	return x;
 }
 
-inline void w_medeleg(uint64 x)
+static inline void w_medeleg(uint64 x)
 {
 	ASM_W("csrw medeleg, %0");
 }
@@ -192,14 +192,14 @@ inline void w_medeleg(uint64 x)
 @
 Machine Interrupt Delegation.
 <<riscv: macros and inline functions>>=
-inline uint64 r_mideleg()
+static inline uint64 r_mideleg()
 {
 	uint64 x;
 	ASM_R("csrr %0, mideleg");
 	return x;
 }
 
-inline void w_mideleg(uint64 x)
+static inline void w_mideleg(uint64 x)
 {
 	ASM_W("csrw mideleg, %0");
 }
@@ -210,12 +210,12 @@ inline void w_mideleg(uint64 x)
 Supervisor Trap-Vector Base Address,
 low two bits are mode.
 <<riscv: macros and inline functions>>=
-inline void w_stvec(uint64 x)
+static inline void w_stvec(uint64 x)
 {
 	ASM_W("csrw stvec, %0");
 }
 
-inline uint64 r_stvec()
+static inline uint64 r_stvec()
 {
 	uint64 x;
 	ASM_R("csrr %0, stvec");
@@ -227,7 +227,7 @@ inline uint64 r_stvec()
 @
 Machine-mode interrupt vector.
 <<riscv: macros and inline functions>>=
-inline void w_mtvec(uint64 x)
+static inline void w_mtvec(uint64 x)
 {
 	ASM_W("csrw mtvec, %0");
 }
@@ -247,12 +247,12 @@ Use riscv's sv39 page table scheme.
 Supervisor address translation and protection;
 holds the address of the page table.
 <<riscv: macros and inline functions>>=
-inline void w_satp(uint64 x)
+static inline void w_satp(uint64 x)
 {
 	ASM_W("csrw satp, %0");
 }
 
-inline uint64 r_satp()
+static inline uint64 r_satp()
 {
 	uint64 x;
 	ASM_R("csrr %0, satp");
@@ -264,12 +264,12 @@ inline uint64 r_satp()
 @
 Supervisor Scratch register.
 <<riscv: macros and inline functions>>=
-inline void w_sscratch(uint64 x)
+static inline void w_sscratch(uint64 x)
 {
 	ASM_W("csrw sscratch, %0");
 }
 
-inline void w_mscratch(uint64 x)
+static inline void w_mscratch(uint64 x)
 {
 	ASM_W("csrw mscratch, %0");
 }
@@ -279,7 +279,7 @@ inline void w_mscratch(uint64 x)
 @
 Supervisor Trap Cause.
 <<riscv: macros and inline functions>>=
-inline uint64 r_scause()
+static inline uint64 r_scause()
 {
 	uint64 x;
 	ASM_R("csrr %0, scause");
@@ -291,7 +291,7 @@ inline uint64 r_scause()
 @
 Supervisor Trap Value.
 <<riscv: macros and inline functions>>=
-inline uint64 r_stval()
+static inline uint64 r_stval()
 {
 	uint64 x;
 	ASM_R("csrr %0, stval");
@@ -303,12 +303,12 @@ inline uint64 r_stval()
 @
 Machine-mode Counter-Enable.
 <<riscv: macros and inline functions>>=
-inline void w_mcounteren(uint64 x)
+static inline void w_mcounteren(uint64 x)
 {
 	ASM_W("csrw mcounteren, %0");
 }
 
-inline uint64 r_mcounteren()
+static inline uint64 r_mcounteren()
 {
 	uint64 x;
 	ASM_R("csrr %0, mcounteren");
@@ -320,7 +320,7 @@ inline uint64 r_mcounteren()
 @
 Machine-mode cycle counter.
 <<riscv: macros and inline functions>>=
-inline uint64 r_time()
+static inline uint64 r_time()
 {
 	uint64 x;
 	ASM_R("csrr %0, time");
@@ -332,7 +332,7 @@ inline uint64 r_time()
 @
 Enable device interrupts.
 <<riscv: macros and inline functions>>=
-inline void intr_on()
+static inline void intr_on()
 {
 	w_sstatus(r_sstatus() | SSTATUS_SIE);
 }
@@ -342,7 +342,7 @@ inline void intr_on()
 @
 Disable device interrupts.
 <<riscv: macros and inline functions>>=
-inline void intr_off()
+static inline void intr_off()
 {
 	w_sstatus(r_sstatus() & ~SSTATUS_SIE);
 }
@@ -352,7 +352,7 @@ inline void intr_off()
 @
 Are device interrupts enabled?
 <<riscv: macros and inline functions>>=
-inline int intr_get()
+static inline int intr_get()
 {
 	uint64 x = r_sstatus();
 	return (x & SSTATUS_SIE) != 0;
@@ -363,7 +363,7 @@ inline int intr_get()
 @
 Get stack pointer.
 <<riscv: macros and inline functions>>=
-inline uint64 r_sp()
+static inline uint64 r_sp()
 {
 	uint64 x;
 	ASM_R("mv %0, sp");
@@ -376,14 +376,14 @@ inline uint64 r_sp()
 Read and write {\tt tp}, the thread pointer, which holds
 this core's hartid (core number). 
 <<riscv: macros and inline functions>>=
-inline uint64 r_tp()
+static inline uint64 r_tp()
 {
 	uint64 x;
 	ASM_R("mv %0, tp");
 	return x;
 }
 
-inline void w_tp(uint64 x)
+static inline void w_tp(uint64 x)
 {
 	ASM_W("mv tp, %0");
 }
@@ -393,7 +393,7 @@ inline void w_tp(uint64 x)
 @
 Read {\tt ra}.
 <<riscv: macros and inline functions>>=
-inline uint64 r_ra()
+static inline uint64 r_ra()
 {
 	uint64 x;
 	ASM_R("mv %0, ra");
@@ -405,7 +405,7 @@ inline uint64 r_ra()
 @
 Flush the TLB.
 <<riscv: macros and inline functions>>=
-inline void sfence_vma()
+static inline void sfence_vma()
 {
 	ASM("sfence.vma zero, zero");
 	/* the zero, zero means flush all TLB entries. */
