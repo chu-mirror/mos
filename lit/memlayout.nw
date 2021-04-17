@@ -1,0 +1,86 @@
+@
+\subsection{Appendix: Memory Layout}
+
+Memory layout differs from one machine to another, because {\tt MOS} is supposed to be able to
+run on {\tt qemu-virt}, I set up the layout so.
+<<repertoire of driver layer>>=
+<<memory layout of qemu-virt>>
+
+@
+{\tt qemu-virt} is set up like this,
+based on qemu's {\tt hw/riscv/virt.c}.
+
+{\tt 00001000}: boot ROM, provide by \.{qemu}\par
+{\tt 02000000}: CLINT\par
+{\tt 0C000000}: PLIC\par
+{\tt 10000000}: uart0\par
+{\tt 10001000}: virtio disk\par
+{\tt 80000000}: boot ROM jumps here in machine mode,\par
+commond line option {\tt -kernel} loads the kernel here
+
+The kernel uses physical memory thus:
+
+{\tt 80000000}: {\tt entry.S}, then kernel's text and data\par
+end: start of page allocation area\par
+PHYSTOP: kernel space's end at RAM
+
+<<memory layout of qemu-virt>>=
+<<uart0's controller>>
+<<virtio's controller>>
+<<CLINT's controller>>
+<<PLIC's controller>>
+
+@
+\.{qemu} puts UART registers here in physical memory.
+<<uart0's controller>>=
+#define UART0 0x10000000L
+#define UART0_IRQ 10
+
+<<virtio's controller>>=
+#define VIRTIO0 0x10001000L
+#define VIRTIO0_IRQ 1
+
+<<CLINT's controller>>=
+#define CLINT 0x02000000L
+#define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
+#define CLINT_MTIME (CLINT + 0xBFF8) /* cycles since boot */
+
+<<PLIC's controller>>=
+#define PLIC 0x0c000000L
+#define PLIC_PRIORITY (PLIC + 0x0)
+#define PLIC_PENDING (PLIC + 0x1000)
+#define PLIC_MENABLE(hart) (PLIC + 0x2000 + (hart)*0x100)
+#define PLIC_SENABLE(hart) (PLIC + 0x2080 + (hart)*0x100)
+#define PLIC_MPRIORITY(hart) (PLIC + 0x200000 + (hart)*0x2000)
+#define PLIC_SPRIORITY(hart) (PLIC + 0x201000 + (hart)*0x2000)
+#define PLIC_MCLAIM(hart) (PLIC + 0x200004 + (hart)*0x2000)
+#define PLIC_SCLAIM(hart) (PLIC + 0x201004 + (hart)*0x2000)
+
+@
+Besides memory layout that determinded by machine's specification,
+there are also some defined by kernel.
+The kernel expects there to be {\tt RAM}
+for use by the kernel and user pages
+from physical address [[0x80000000]] to [[PHYSTOP]].
+
+<<repertoire of driver layer>>=
+<<kernel's layout>>
+
+<<kernel's layout>>=
+#define KERNBASE 0x80000000L
+#define PHYSTOP (KERNBASE + 128*1024*1024) /* 128MB */
+
+<<trampoline's location>>
+<<kernel stacks' location>>
+
+@
+Map the trampoline page to the highest address,
+in both user and kernel space.
+<<trampoline's location>>=
+#define TRAMPOLINE (MAXVA - PGSIZE)
+
+@
+Map kernel stacks beneath the trampoline,
+each surrounded by invalid guard pages.
+<<kernel stacks' location>>=
+#define KSTACK(p) (TRAMPOLINE - ((p)+1)* 2*PGSIZE)

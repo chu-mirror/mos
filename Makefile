@@ -7,10 +7,11 @@ T = tool
 # The order of chapters maters
 CHAPS = \
 	$L/des.nw \
-	$L/prod.nw \
+	$L/layer.nw $L/riscv.nw $L/memlayout.nw \
 	$L/boot.nw \
 	$L/driver.nw \
 	$L/log.nw \
+	$L/prod.nw \
 	$L/tool.nw
 
 DOC = mos.pdf

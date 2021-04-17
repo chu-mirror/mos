@@ -1,0 +1,39 @@
+@
+\section{Layers}
+As the previous chapter introduced, the concept of layer act a central role
+at understanding codes' behavior.
+The following sections detail layers' execution environments.
+
+@
+Some common codes used by layers in kernel space.
+<<common data types>>=
+typedef unsigned char	uint8;
+typedef unsigned short	uint16;
+typedef unsigned int	uint32;
+typedef unsigned long	uint64;
+
+<<repertoire of driver layer>>=
+<<common data types>>
+
+<<repertoire of subsystem layer>>=
+<<common data types>>
+
+@
+\subsection{Driver Layer}
+This layer talk to machine directly, 
+the major actions of this layer are usually direct memory and register accessings.
+The modules run in this layer should know how to interact with CPU and how to name memory's units.
+
+@
+The maximum number of CPUs is assumed to be 4, and {\tt MOS} is built for {\tt RISC-V} machine.
+<<repertoire of driver layer>>=
+#define NCPU 	8
+#define ISA	"RISC-V"
+
+@ %def NCPU ISA
+
+@
+\subsection{Subsystem Layer}
+
+@
+\subsection{User Space Layer}
