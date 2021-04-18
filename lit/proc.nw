@@ -1,0 +1,54 @@
+@
+\section{Process}
+
+As I discussed above, codes can be executed by interpreter,
+follow traditional terms, I call codes being in the midst of execution is a process.
+We have two kinds of process, one running at driver layer, one running at subsystem layer.
+The process running at driver layer is easy, you can simply stop thinking about operating system,
+image a bunch of assembly code running on a machine.
+Each CPU fetches codes from memory, executes it, yields I/O operations, reads or writes memory concurrently.
+You can see that each CPU performs actions in a rather not related way usually, they acts as different interpreters.
+The official documents call such process {\it hart}, from {\it hardware thread}.
+I tend to think on the mental model of a single interpreter having different enviroment references,
+but you can build another mental model of 
+different interpreters which are seperated to each other but from a common template.
+A complete discussion of {\it hart} is beyond this document's scope, 
+consult {\sl The RISC-V Instruction Set Manual Volume 1} for a detailed definition.
+
+But when we turn to the processes of subsystem layer, it's a completely blank area, 
+you can not rely on your hardware's knowledge to image about it.
+It's operating system's job to define what a interpreter of subsystem layer looks like,
+yes, it's my job.
+
+We are now at one of the most important and most creative stages among all courses of an operating system's building.
+First of all, follow linux, I call this kind of process {\it task}.
+In a broad view, a task can invoke ports of lower layer's drivers to do I/O operations,
+or interact with other subsystems to do some work, just as I have talked in the first chapter.
+But consider the situation of invoking a driver's port,
+the process sink into driver layer, what should we call this process now?
+A hart? or a task? It seems the process has not changed a lot, just jump from one point
+to another, the same as any function's invoking in the same layer.
+And it has not changed a lot in fact, but I call this process hart now.
+The difference between a hart and a task is depended on which interpreter is in use,
+concisely, what the process can take effect on, how the process can take effect.
+For a hart, it can see the status of CPU's registers, and can operate on these registers if it has the
+corresponding privilege.
+For a task, it can not operate on its registers directly, it perfomes actions in a higher lever of abstraction,
+the actions' objects consists of data structures, blocks of memory, and have no idea about CPU's status which
+may act a decisive role in its behaviour.
+A typical situation is that a hart do some settings of the CPU's status, 
+then it float up to be a task, the settings decided the task's behaviour,
+including settings of virtual memory, stack's position, privilege, ...etc.
+Come back to the first chapter's {\it enviroment reference},
+the two kinds of interpreter have diffrent definitions of reference to an enviroment,
+I will explain it later.
+
+The relation between hart and task is not fixed, a multi-thread system can divide a hart to a lot of tasks,
+each have a different setting compared to others, a single-thread system's hart equal to task but interpreted
+in different layer. {\tt MOS} is a multi-thread system, I use the design from classic {\tt UNIX} system.
+
+But before we begin to define what task looks in {\tt MOS},
+let's solve a problem occurring in the means of {\it process}.
+
+@
+\subsection{Lock}

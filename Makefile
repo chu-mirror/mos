@@ -8,6 +8,7 @@ T = tool
 CHAPS = \
 	$L/des.nw \
 	$L/layer.nw $L/riscv.nw $L/memlayout.nw \
+	$L/proc.nw \
 	$L/boot.nw \
 	$L/driver.nw \
 	$L/log.nw \
