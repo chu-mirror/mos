@@ -17,3 +17,4 @@ just list a TODO list here to remind myself.
 
 4. build concept of process 
 
+5. spinlock
