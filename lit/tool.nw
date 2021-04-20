@@ -26,7 +26,7 @@ src_dir=src
 @
 \subsection{Autogenerate Layout}
 
-Generate source code's layout to help {\tt noweb} to produce final codes understood by
+Generate source code's layout to help {\tt noweb} producing final codes understood by
 compiler or assembler, there are two types now,
 assambly~code and C~code.
 
@@ -37,9 +37,18 @@ suf=$(expr $1 : '[[:graph:]]*\.\([[:alnum:]]*\)')
 m4 -DMODULE=$(basename $1 .$suf) -DSUFFIX=$suf $tool_dir/module.m4
 
 @
+A [[ifelse]] macro to decide which layout to use.
 <<module.m4>>=
 ifelse(
-SUFFIX, c, dnl C code's layout
+SUFFIX, c, dnl
+@<<MODULE.c@>>=
+<<c code's layout>>
+,
+SUFFIX, S, dnl
+<<assembly code's layout>>
+)
+
+<<c code's layout>>=
 @<<MODULE.c@>>=
 @<<MODULE's repertoire@>>
 @<<MODULE's macros@>>
@@ -61,9 +70,8 @@ SUFFIX, c, dnl C code's layout
 
 @<<MODULE's port@>>=
 
+<<assembly code's layout>>=
 @<<MODULE's functions@>>= 
-,
-SUFFIX, S, dnl assembly code's layout
 @<<MODULE.S@>>=
 @<<MODULE's repertoire@>>
 .section .text
@@ -77,4 +85,3 @@ SUFFIX, S, dnl assembly code's layout
 @<<MODULE's functions@>>
 
 @<<MODULE's data@>>=
-)

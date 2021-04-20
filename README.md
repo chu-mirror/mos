@@ -1,9 +1,19 @@
 # MOS - My OS
 
-I decide to write a operating system to learn something...
+I decide to write an operating system to learn something...
 
 It's still at beginning, and I'm not sure how to complete it for now,
-just list a TODO list here to remind myself.
+just put a TODO list here to remind myself.
+
+If you want to compile my code, you need to install __noweb__ first,
+```
+$ make all 	# compile kernel
+$ make qemu	# start qemu
+$ make doc	# generate a pdf document
+
+$ make clean	# delete temporary files
+$ make clobber	# delete all files except source code
+```
 
 ## TODO
 
@@ -18,3 +28,5 @@ just list a TODO list here to remind myself.
 4. build concept of process 
 
 5. spinlock
+
+6. implement task
