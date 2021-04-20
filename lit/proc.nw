@@ -52,3 +52,65 @@ let's solve a problem occurring in the means of {\it process}.
 
 @
 \subsection{Lock}
+If two processes run concurrently, what will happen if they both try to write a object at the same time?
+If the writing is not small enough to be an undivided action, there may be a situation when
+one process are writing a part of that object, another also begin its writing.
+The result is uncertain, depends on machine's machenism and process's behavior. 
+
+The problem is particularly important when {\tt MOS} is supposed to run on a multi-core machine,
+means there are several harts. So, a solution should be given in driver layer,
+use support from hardware directly.
+One of the ways to do that is {\it spinlock}.
+I will not talk about it thoroughly, for the implementation is borrowed from others,
+and the design are teached again and again in different textbooks.
+{\sl Operating System Concepts, Chapter 6,7} may be a good reference.
+
+@
+\subsubsection{Driver Layer}
+The whole implementation is divided into two parts,
+this part defined driver layer's implementation.
+<<spinlock's repertoire>>=
+<<repertoire of driver layer>>
+
+@
+The data structure is exported to outside.
+<<spinlock's interface>>=
+struct spinlock {
+	uint64 locked;
+};
+
+@ %def spinlock
+
+@
+Acquire and release the lock.
+<<spinlock's functions>>=
+void
+acquire(struct spinlock *lk)
+{
+
+	while (__sync_lock_test_and_set(&lk->locked, 1) != 0)
+		;
+	
+	__sync_synchronize();
+}
+
+void
+release(struct spinlock *lk)
+{
+	__sync_synchronize();
+	__sync_lock_release(&lk->locked);
+}
+
+@ %def acquire release
+
+<<spinlock's interface>>=
+void acquire(struct spinlock *);
+void release(struct spinlock *);
+
+@
+Because when we use a spinlock to specify a block of code to a critical section,
+we do not care whether layer the code is running at,
+so the interface should be shared by both layers.
+
+<<repertoire of subsystem layer>>=
+<<spinlock's interface>>

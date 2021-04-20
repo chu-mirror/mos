@@ -18,6 +18,7 @@ CHAPS = \
 DOC = mos.pdf
 
 C_SRC = \
+	$S/spinlock.c \
 	$S/start.c $S/main.c $S/uart.c $S/log.c
 
 ASM_SRC = \

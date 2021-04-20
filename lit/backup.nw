@@ -33,3 +33,52 @@ $4$: desired interval (in cycles) between timer interrupts
 #undef CLINT_INTERVAL
 }
 
+
+@
+\subsubsection{Subsystem Layer}
+Some advanced features can be introduced here
+
+@
+Define the data structure first, here used a fixed amount of {\it locks},
+it's relatively reasonable design when compare the need for a new lock to
+overhead produced by dynamic memory allocation.
+
+<<lock's data>>=
+struct spinlock {
+	uint64 locked;
+} locks[MAX_LOCK];
+
+/* current number of locks in use, [[locks[0]]] is used by itself */
+static int cur = 1; 
+
+<<lock's macros>>=
+#define MAX_LOCK 64
+
+<<lock's interface>>=
+typedef struct spinlock *spinlock;
+
+
+@
+Initialize this module, the array of locks should it self be locked.
+<<lock's functions>>=
+void
+spinlock_init()
+{
+	init_lock(&locks[0]);
+}
+
+void
+initlock(spinlock lk)
+{
+	lk->locked = 0;
+}
+
+@
+Lock's allocation and release.
+<<lock's functions>>=
+spinlock
+allo_lock()
+{
+	if (cur == MAX_LOCK) {
+	}
+}

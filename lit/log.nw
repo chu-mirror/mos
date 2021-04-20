@@ -8,6 +8,19 @@
 @
 \subsection{Formatted Output}
 
+<<log's data>>=
+struct spinlock printf_lock;
+
+<<log's functions>>=
+void
+printf_init()
+{
+	printf_lock.locked = 0;
+}
+
+<<log's interface>>=
+void printf_init(void);
+
 <<log's functions>>=
 void
 printf(char *fmt, ...)
@@ -15,12 +28,15 @@ printf(char *fmt, ...)
 	va_list ap;
 	char *cp;
 
+	acquire(&printf_lock);
+
 	va_start(ap, fmt);
 	for (cp = fmt; *cp != '\0'; cp++) {
 		char c = *cp;
 		<<for each kinds of [[c]]>>
 	}
 
+	release(&printf_lock);
 }
 
 @ %def printf

@@ -6,17 +6,17 @@ The following sections detail layers' execution environments.
 
 @
 Some common codes used by layers in kernel space.
-<<common data types>>=
+<<common codes>>=
 typedef unsigned char	uint8;
 typedef unsigned short	uint16;
 typedef unsigned int	uint32;
 typedef unsigned long	uint64;
 
 <<repertoire of driver layer>>=
-<<common data types>>
+<<common codes>>
 
 <<repertoire of subsystem layer>>=
-<<common data types>>
+<<common codes>>
 
 @
 \subsection{Driver Layer}
