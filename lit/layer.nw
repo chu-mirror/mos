@@ -2,10 +2,12 @@
 \section{Layers}
 As the previous chapter introduced, the concept of layer act a central role
 at understanding codes' behavior.
-The following sections detail layers' execution environments.
+The following sections detail layers' execution environments,
+will not be so sophisticated, it's still an introductory chapter,
+but contains some codes.
 
 @
-Some common codes used by layers in kernel space.
+Some common codes used by both layers in kernel space.
 <<common codes>>=
 typedef unsigned char	uint8;
 typedef unsigned short	uint16;
@@ -22,15 +24,19 @@ typedef unsigned long	uint64;
 \subsection{Driver Layer}
 This layer talk to machine directly, 
 the major actions of this layer are usually direct memory and register accessings.
-The modules run in this layer should know how to interact with CPU and how to name memory's units.
+The modules running in this layer should know how to interact with CPU and how to name memory's units.
 
 @
-The maximum number of CPUs is assumed to be 4, and {\tt MOS} is built for {\tt RISC-V} machine.
+There are some arguments specific to particular machine in use.
+The maximum number of CPUs is assumed to be 8, and {\tt MOS} is built for {\tt RISC-V} machine.
 <<repertoire of driver layer>>=
 #define NCPU 	8
 #define ISA	"RISC-V"
 
 @ %def NCPU ISA
+
+The memory's layout is described in {\sl Appendix: Memory Layout}.
+The C~interface to {\tt RISC-V} architecture is defined in {\sl Appendix: C~interface to RISC-V}.
 
 @
 \subsection{Subsystem Layer}

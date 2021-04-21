@@ -5,81 +5,14 @@ Copied verbatim from other projects.
 @
 \subsection{UART}
 
-<<uart's repertoire>>=
-<<repertoire of driver layer>>
+<<uart's port>>=
+void uartinit(void);
+void uartintr(void);
+void uartputc(int);
+void uartputc_sync(int);
+int uartgetc(void);
+
+@ %def uartinit uartintr uartputc uartputc_sync uartgetc
 
 <<repertoire of subsystem layer>>=
 <<uart's port>>
-
-@
-The {\tt UART} control registers,
-see {\tt http://byterunner.com/16550.html} for more information.
-Register labeled by 0 and 2 has different meanings for write vs write.
-
-<<uart's control register bit maps>>=
-
-#define RHR	0	/* receive holding register */
-#define THR	0	/* transmit holding register */
-#define IER	1	/* interrupt enable register */
-#define FCR	2	/* FIFO control register */
-#define ISR	2	/* interrupt status register */
-#define LCR	3	/* line control register */
-#define LSR	5	/* line status register */
-#define SPR	7	/* scratchpad register */
-
-#define IER_R_ENABLE (1<<0) /* receive holding register interrupt */
-#define IER_T_ENABLE (1<<1) /* transmit holding register interrupt */
-#define IER_RLS_ENABLE (1<<2) /* receive line status interrupt */
-
-#define FCR_FIFO_ENABLE (1<<0) /* FIFO enable */
-#define FCR_FIFO_R_RESET (1<<1) /* receiver FIFO reset */
-#define FCR_FIFO_T_RESET (1<<2) /* transmit FIFO reset */
-#define FCR_FIFO_CLEAR (3<<1) /* reset both */
-
-#define ISR_INT_STATUS (1<<0) /* interrupt status */
-#define ISR_INT_PRIOR (7<<1) /* interrupt prior */
-
-#define LCR_WORD_LENGTH (3<<0) /* word length */
-#define LCR_BAUD_LATCH (1<<7) /* internal baud rate counter latch enable */
-
-#define LSR_R_READY (1<<0) /* receive data ready */
-#define LSR_T_EMPTY (1<<5) /* transmit holding empty */
-
-<<uart's macros>>=
-<<uart's control register bit maps>>
-
-@
-[[uartinit]] initialize uart controler,
-disable all interrupts for now.
-<<uart's functions>>=
-void
-uartinit()
-{
-	REG(IER) = 0x00; /* disable all interrupts */
-}
-@ %def uartinit
-
-<<uart's port>>=
-void uartinit();
-
-@
-Define a macro to help dealing with registers.
-<<uart's macros>>=
-#define REG(r) (*(volatile uint8 *)(UART0 + (r)))
-
-@ %def REG
-
-@
-<<uart's functions>>=
-void
-uartputc(uint8 c)
-{
-	while((REG(LSR) & LSR_T_EMPTY) == 0) ;
-	REG(THR) = c;
-}
-
-@ %def uartputc
-
-<<uart's port>>=
-void uartputc(uint8);
-

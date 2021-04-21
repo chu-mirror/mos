@@ -34,29 +34,3 @@ The interface of succeeding C~code is [[start]].
 <<continue with C code>>=
 call start
 
-@
-To ensure following booting continue correctly, should do:
-
-1. disable paging of supervisor mode for now, the pagatable has not built yet.\par
-2. delegate interrupts and exceptions to supervisor mode to avoid accidents.
-
-<<set up initial status of CPU>>=
-w_satp(0); /* disable paging */
-w_medeleg(0xffff);
-/* delegate interrupts and exceptions to supervisor mode */
-w_mideleg(0xffff);
-w_sie(r_sie() | SIE_SEIE | SIE_STIE | SIE_SSIE);
-
-w_tp(r_mhartid()); /* set thread pointer to correct value */
-
-@
-This step's purpose is to set up as if [[start]] is called from 
-supervisor mode.
-<<prepare for switching to supervisor mode>>=
-{
-	extern void main(); 
-
-	w_mstatus((r_mstatus() & ~MSTATUS_MPP_MASK) | MSTATUS_MPP_S );
-	w_mepc((uint64)main); /* return to [[main]] */
-}
-

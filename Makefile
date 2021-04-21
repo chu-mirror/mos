@@ -4,7 +4,7 @@ L = lit
 S = src
 T = tool
 
-# The order of chapters maters
+# The order of chapters matters
 CHAPS = \
 	$L/des.nw \
 	$L/layer.nw $L/riscv.nw $L/memlayout.nw \
@@ -19,10 +19,17 @@ DOC = mos.pdf
 
 C_SRC = \
 	$S/spinlock.c \
-	$S/start.c $S/main.c $S/uart.c $S/log.c
+	$S/start.c $S/main.c $S/log.c
+
+HEADER = \
+	$S/repdri.h
 
 ASM_SRC = \
 	$S/entry.S
+
+# extern source files
+EX_SRC= \
+	$S/uart.c
 
 SRC = ${ASM_SRC} ${C_SRC}
 
@@ -30,7 +37,7 @@ SCRIPTS = \
 	$T/autolayout.sh $T/module.m4
 
 MODULES = ${ASM_SRC:.S=} ${C_SRC:.c=}
-OBJS = ${MODULES:=.o}
+OBJS = ${MODULES:=.o} ${EX_SRC:.c=.o}
 
 TOOLS = \
 	$T/autolayout
@@ -62,18 +69,20 @@ qemu: mos-kernel
 
 clean: 
 	${RM} *.aux *.log *.tex
-	${RM} ${OBJS}
+	${RM} ${OBJS} ${SRC} ${SRC:.c=.d} ${HEADER} ${EX_SRC:.c=.d}
 	${RM} ${TOOLS} layout
 
 clobber: clean
-	${RM} -r $S $T
 	${RM} mos-kernel ${DOC}
 
-${SRC}: ${CHAPS} layout 
+${SRC}: ${CHAPS} ${HEADER} layout 
 	notangle -R${@F} ${CHAPS} layout > $@
 
 ${SCRIPTS}: ${CHAPS}
 	notangle -R${@F} ${CHAPS} > $@
+
+$S/repdri.h: ${CHAPS}
+	notangle -R"repertoire of driver layer" ${CHAPS} > $@
 
 layout: $T/autolayout
 	${RM} layout

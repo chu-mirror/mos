@@ -2,14 +2,8 @@
 \section{Boot}
 This chapter defined boot process of \.{MOS}.
 
-Booting consists of two parts,
-according to at which CPU mode the hart is running.
-Start from machine mode, then switch to supervisor mode.
-
 Use three modules to handle this process, {\tt entry}, {\tt start}, {\tt main}.
-{\tt entry} and {\tt start} run at machine mode,
-from view of code's organization, they run in driver layer,
-{\tt main} run at supervisor mode, in subsystem layer.
+The previous two run at driver layer, {\tt main} run at subsystem layer.
 
 @
 \subsection{entry}
@@ -42,26 +36,33 @@ __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 void
 start()
 {
-	<<set up initial status of CPU>>
-	<<prepare for switching to supervisor mode>>
-	ASM("mret");
+	<<initialize CPU's status>>
+	extern void main();
+	main();
 }
 @ %def start
+
+<<initialize CPU's status>>=
 
 @
 \subsection{main}
 
 <<main's repertoire>>=
 <<repertoire of subsystem layer>>
-<<repertoire of driver layer>>
 <<log's interface>>
+
+inline int getcpu() {
+	int x;
+	asm volatile("csrr %0, mhartid": "=r" (x));
+	return x;
+}
 
 <<main's functions>>=
 void
 main()
 {
 	volatile static int started = 0;
-	if (r_tp() == 0) {
+	if (getcpu() == 0) {
 		uartinit();
 		printf_init();
 		printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", -10, 16*15, "I lo\n");

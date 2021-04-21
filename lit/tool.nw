@@ -63,8 +63,6 @@ SUFFIX, S, dnl
 @<<MODULE's data@>>=
 
 @<<MODULE's prototypes@>>=
-@<<MODULE's interface@>>
-@<<MODULE's port@>>
 
 @<<MODULE's interface@>>=
 

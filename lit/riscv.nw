@@ -38,7 +38,11 @@ Machine Status Register, mstatus.
 #define MSTATUS_MPP_M (3L << 11)
 #define MSTATUS_MPP_S (1L << 11)
 #define MSTATUS_MPP_U (0L << 11)
-#define MSTATUS_MIE (1L << 3)	 /* machine-mode interrupt enable. */
+#define MSTATUS_MIE (1L << 3)	/* machine-mode interrupt enable. */
+#define MSTATUS_SIE (1L << 1)	/* supervisor-mode interrupt enable. */
+#define MSTATUS_TVM (1L << 20)	/* trap virtual memory */
+#define MSTATUS_TW (1L << 21)	/* timeout wait */
+#define MSTATUS_TSR (1L << 22) 	/* trap SRET */
 
 static inline uint64 r_mstatus()
 {

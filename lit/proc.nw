@@ -8,7 +8,7 @@ The process running at driver layer is easy, you can simply stop thinking about 
 image a bunch of assembly code running on a machine.
 Each CPU fetches codes from memory, executes it, yields I/O operations, reads or writes memory concurrently.
 You can see that each CPU performs actions in a rather not related way usually, they acts as different interpreters.
-The official documents call such process {\it hart}, from {\it hardware thread}.
+Official documents call such process {\it hart}, from {\it hardware thread}.
 I tend to think on the mental model of a single interpreter having different enviroment references,
 but you can build another mental model of 
 different interpreters which are seperated to each other but from a common template.
@@ -16,7 +16,7 @@ A complete discussion of {\it hart} is beyond this document's scope,
 consult {\sl The RISC-V Instruction Set Manual Volume 1} for a detailed definition.
 
 But when we turn to the processes of subsystem layer, it's a completely blank area, 
-you can not rely on your hardware's knowledge to image about it.
+you can not rely on your hardware's knowledge to imagine about it.
 It's operating system's job to define what a interpreter of subsystem layer looks like,
 yes, it's my job.
 
@@ -32,7 +32,7 @@ And it has not changed a lot in fact, but I call this process hart now.
 The difference between a hart and a task is depended on which interpreter is in use,
 concisely, what the process can take effect on, how the process can take effect.
 For a hart, it can see the status of CPU's registers, and can operate on these registers if it has the
-corresponding privilege.
+appropriate privilege.
 For a task, it can not operate on its registers directly, it perfomes actions in a higher lever of abstraction,
 the actions' objects consists of data structures, blocks of memory, and have no idea about CPU's status which
 may act a decisive role in its behaviour.
@@ -44,10 +44,10 @@ the two kinds of interpreter have diffrent definitions of reference to an enviro
 I will explain it later.
 
 The relation between hart and task is not fixed, a multi-thread system can divide a hart to a lot of tasks,
-each have a different setting compared to others, a single-thread system's hart equal to task but interpreted
-in different layer. {\tt MOS} is a multi-thread system, I use the design from classic {\tt UNIX} system.
+each has a different setting compared to others, a single-thread system's hart equal to task but interpreted
+in different layers. {\tt MOS} is a multi-thread system, I use the design from classic {\tt UNIX} system.
 
-But before we begin to define what task looks in {\tt MOS},
+But before we begin to describe what task looks like in {\tt MOS},
 let's solve a problem occurring in the means of {\it process}.
 
 @
@@ -66,7 +66,7 @@ and the design are teached again and again in different textbooks.
 {\sl Operating System Concepts, Chapter 6,7} may be a good reference.
 
 @
-\subsubsection{Driver Layer}
+\subsubsection{Basic machenism}
 The whole implementation is divided into two parts,
 this part defined driver layer's implementation.
 <<spinlock's repertoire>>=
@@ -108,9 +108,89 @@ void acquire(struct spinlock *);
 void release(struct spinlock *);
 
 @
-Because when we use a spinlock to specify a block of code to a critical section,
-we do not care whether layer the code is running at,
+Initialize a spinlock.
+<<spinlock's functions>>=
+void
+initlock(struct spinlock *lk)
+{
+	lk->locked = 0;
+}
+
+@ %def initlock
+
+<<spinlock's interface>>=
+void initlock(struct spinlock *);
+
+@
+Because when we use a spinlock to declare a block of code to a critical section,
+we do not care at which layer the code is running,
 so the interface should be shared by both layers.
 
-<<repertoire of subsystem layer>>=
+<<common codes>>=
 <<spinlock's interface>>
+
+@
+\subsubsection{Enhanced Version}
+
+@
+\subsection{Time Interrupt}
+Then, we are going to partition a hart to several tasks in this section.
+You can imagine that a hart is a long white rope, I coloring on it with different colors.
+The sections of red can be connected logically to a red rope, that's it.
+The question then come into sight is, according to what scheme I color the rope.
+
+There are different solutions to this question in history, as far as I have seen,
+two major strategies.
+One is painting a color as long as colors want continuously, colors may have their own considerations
+on which coloring is the best. Another is dividing the long white rope into a lot of pieces,
+color a piece at once, follow a general rule, no color can last itself unlimitedly.
+The previous appeared in early days of {\tt Mac}, but is not adopted nowadays,
+the latter one is the mainstream.
+And of course, I follow the latter one.
+
+Now, the solution is obvious, I need a ruler to divide this rope,
+and the ruler for this rope is a clock.
+Here we ask the machine for help again, we need to set up timer interrupts.
+But only let the clock run is meaningless,
+some actions should be performed when clock delivered its advice.
+I refer the actions with [[intvec]], name from interrupt vector,
+[[intvec]] also handles other interrupts, I will give it a detailed description later.
+
+@
+Configure timer interrupts, a scratch area per CPU should be allocated, 
+and the interval of coming interrupts are specified by macro [[CLINT_INTERVAL]].
+
+The structure of a scratch area:
+
+$0\ldots2$: space for [[timervec]] to save register\par
+$3$: address of {\tt CLINT MTIMECMP} register\par
+$4$: desired interval(in cycles) between timer interrupts
+
+<<ask for timer interrupts>>=
+{
+#define CLINT_INTERVAL 1000000 /* about 1/10th second in qemu */
+
+	static uint64 timer_scratch[NCPU][5];
+	int id = r_mhartid(); /* configuration per CPU */
+
+	*(uint64 *)CLINT_MTIMECMP(id) =
+		*(uint64 *)CLINT_MTIME + CLINT_INTERVAL;
+
+	uint64 *scratch = timer_scratch[id]; /* set up scratch field */
+	scratch[3] = CLINT_MTIMECMP(id);
+	scratch[4] = CLINT_INTERVAL;
+	w_mscratch((uint64)scratch);
+
+	w_mtvec((uint64)intvec); /* set up timer interrupt handler */
+	w_mstatus(r_mstatus() | MSTATUS_MIE); /* enable timer interrupt */
+	w_mie(r_mie() | MIE_MTIE); /* only timer interrupt now */
+#undef CLINT_INTERVAL
+}
+
+@
+A lot of details here, but I'm not planing to explain here, as I said in Appendix,
+it's your job to read {\tt RISC-V}'s specification.
+
+@
+\subsection{Task}
+
