@@ -9,7 +9,7 @@ imagine a bunch of assembly code running on a machine.
 Each CPU fetches codes from memory, executes it, yields I/O operations, reads or writes memory concurrently.
 You can see that each CPU usually performs actions in a rather not related way, they acts as different interpreters.
 Official documents call such process {\it hart}, from {\it hardware thread}.
-I tend to think on the mental model of a single interpreter having different enviroment references,
+I tend to think on the mental model of a single interpreter having different environment references,
 but you can build another mental model of 
 different interpreters which are seperated to each other but from a common template.
 A complete discussion of {\it hart} is beyond this document's scope, 
@@ -39,8 +39,8 @@ may act a decisive role in its behaviour.
 A typical situation is that a hart do some settings of the CPU's status, 
 then it float up to be a task. The settings decided the task's behaviour,
 including virtual memory, stack's position, privilege, ...etc.
-Come back to the first chapter's {\it enviroment reference},
-the two kinds of interpreter have diffrent definitions of reference to an enviroment,
+Come back to the first chapter's {\it environment reference},
+the two kinds of interpreter have different definitions of reference to an environment,
 I will explain it later.
 
 The relation between hart and task is not fixed, a multi-thread system can divide a hart to a lot of tasks,
@@ -215,7 +215,7 @@ the same location?
 I allocate one pagesize per task.
 
 <<task's data>>=
-__atribute__ ((align (16))) struct task {
+__attribute__ ((align (16))) struct task {
 	struct task_info info;
 	char stack[PGSIZE - sizeof(struct task_info)];
 } tasks[NTASK];
@@ -241,8 +241,8 @@ A name, or {\it pid} in most case, should be attached to the entity of a task.
 I just use the index of array [[tasks]] as the pid, and put it to register {\it tp}(thread pointer} to
 let the task know who itself is.
 It's interesting to compare {\it pid} with {\it hartid}(from register mhartid), 
-they play a same role of reference to enviroment, but in different layers.
-Here we answered the question of the difference of two layers' reference to enviroment.
+they play a same role of reference to environment, but in different layers.
+Here we answered the question of the difference of two layers' reference to environment.
 
 <<repertoire of subsystem layer>>=
 static inline uint64 getpid() {
