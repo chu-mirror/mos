@@ -30,3 +30,5 @@ $ make clobber	# delete all files except source code
 5. spinlock
 
 6. implement task
+
+7. handle interrupt

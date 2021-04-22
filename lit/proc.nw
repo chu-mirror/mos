@@ -1,13 +1,13 @@
 @
 \section{Process}
 
-As I discussed above, codes can be executed by interpreter,
-follow traditional terms, I call codes being in the midst of execution is a process.
+As I discussed above, codes can be executed by interpreter.
+Follow traditional terms, I call codes being in the midst of execution is a process.
 We have two kinds of process, one running at driver layer, one running at subsystem layer.
 The process running at driver layer is easy, you can simply stop thinking about operating system,
-image a bunch of assembly code running on a machine.
+imagine a bunch of assembly code running on a machine.
 Each CPU fetches codes from memory, executes it, yields I/O operations, reads or writes memory concurrently.
-You can see that each CPU performs actions in a rather not related way usually, they acts as different interpreters.
+You can see that each CPU usually performs actions in a rather not related way, they acts as different interpreters.
 Official documents call such process {\it hart}, from {\it hardware thread}.
 I tend to think on the mental model of a single interpreter having different enviroment references,
 but you can build another mental model of 
@@ -15,14 +15,14 @@ different interpreters which are seperated to each other but from a common templ
 A complete discussion of {\it hart} is beyond this document's scope, 
 consult {\sl The RISC-V Instruction Set Manual Volume 1} for a detailed definition.
 
-But when we turn to the processes of subsystem layer, it's a completely blank area, 
+But when we turn to the processes of subsystem layer, you will be facing a completely blank area, 
 you can not rely on your hardware's knowledge to imagine about it.
 It's operating system's job to define what a interpreter of subsystem layer looks like,
 yes, it's my job.
 
 We are now at one of the most important and most creative stages among all courses of an operating system's building.
 First of all, follow linux, I call this kind of process {\it task}.
-In a broad view, a task can invoke ports of lower layer's drivers to do I/O operations,
+In a broad view, a task can invoke {\it ports} of lower layer's drivers to do I/O operations,
 or interact with other subsystems to do some work, just as I have talked in the first chapter.
 But consider the situation of invoking a driver's port,
 the process sink into driver layer, what should we call this process now?
@@ -34,11 +34,11 @@ concisely, what the process can take effect on, how the process can take effect.
 For a hart, it can see the status of CPU's registers, and can operate on these registers if it has the
 appropriate privilege.
 For a task, it can not operate on its registers directly, it perfomes actions in a higher lever of abstraction,
-the actions' objects consists of data structures, blocks of memory, and have no idea about CPU's status which
+the actions' objects consist of data structures, blocks of memory, and have no idea about CPU's status, which
 may act a decisive role in its behaviour.
 A typical situation is that a hart do some settings of the CPU's status, 
-then it float up to be a task, the settings decided the task's behaviour,
-including settings of virtual memory, stack's position, privilege, ...etc.
+then it float up to be a task. The settings decided the task's behaviour,
+including virtual memory, stack's position, privilege, ...etc.
 Come back to the first chapter's {\it enviroment reference},
 the two kinds of interpreter have diffrent definitions of reference to an enviroment,
 I will explain it later.
@@ -68,7 +68,7 @@ and the design are teached again and again in different textbooks.
 @
 \subsubsection{Basic machenism}
 The whole implementation is divided into two parts,
-this part defined driver layer's implementation.
+this part defined the basic machenism provided by {\it spinlock}.
 <<spinlock's repertoire>>=
 <<repertoire of driver layer>>
 
@@ -182,15 +182,73 @@ $4$: desired interval(in cycles) between timer interrupts
 	w_mscratch((uint64)scratch);
 
 	w_mtvec((uint64)intvec); /* set up timer interrupt handler */
-	w_mstatus(r_mstatus() | MSTATUS_MIE); /* enable timer interrupt */
+	w_mstatus(r_mstatus() | MSTATUS_MIE); /* enable global interrupt */
 	w_mie(r_mie() | MIE_MTIE); /* only timer interrupt now */
 #undef CLINT_INTERVAL
 }
 
 @
-A lot of details here, but I'm not planing to explain here, as I said in Appendix,
+A lot of details here, but I'm not planing to explain here. As I said in Appendix,
 it's your job to read {\tt RISC-V}'s specification.
 
 @
 \subsection{Task}
+By now, we have a rope waiting to be colored, and a rule used to divide the rope,
+it's time to select the color, a bad analogy, means to give a concise description of tasks.
 
+Consider that we have a rope colored, look at one point on it,
+or just abandon this analogy, it's a moment that one task is in running, others are waiting to run.
+Then we have two state of task at a specific moment, running and waiting.
+We need a data structure to record it.
+
+<<task's data>>=
+struct task_info {
+	int state; /* 0: waiting; 1: running */
+	<<status of a task>> /* wait for further use */
+};
+
+@ %def task_info
+
+@
+We also need a stack to run C~code, but wait, why not placing all informations of a task to
+the same location?
+I allocate one pagesize per task.
+
+<<task's data>>=
+__atribute__ ((align (16))) struct task {
+	struct task_info info;
+	char stack[PGSIZE - sizeof(struct task_info)];
+} tasks[NTASK];
+
+@ %def tasks
+
+<<repertoire of subsystem layer>>=
+#define NTASK 64 /* maximum number of tasks */
+
+@ %def NTASK
+
+@
+Because I do not want to bother at the dynamic memory allocation,
+just set a limitation to number of tasks.
+
+Okay, well done, seems like we are completing this topic,
+but let's return to the model of layers for now.
+A task is running at subsystem layer, it communicates happily with files, memories,
+and maybe other tasks. In some cases, maybe the filesystem, need to know the task's name,
+a subsystem is supposed to communicate with a lot of tasks after all.
+The task should be labeled, or named, at least from the viewpoint of outside.
+A name, or {\it pid} in most case, should be attached to the entity of a task.
+I just use the index of array [[tasks]] as the pid, and put it to register {\it tp}(thread pointer} to
+let the task know who itself is.
+It's interesting to compare {\it pid} with {\it hartid}(from register mhartid), 
+they play a same role of reference to enviroment, but in different layers.
+Here we answered the question of the difference of two layers' reference to enviroment.
+
+<<repertoire of subsystem layer>>=
+static inline uint64 getpid() {
+	uint64 x;
+	asm volatile("mv %0, tp":"=r"(x));
+	return x;
+}
+
+@ %def getpid
