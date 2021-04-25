@@ -158,25 +158,6 @@ static inline void w_mie(uint64 x)
 @ %def r_mie w_mie
 
 @
-Supervisor exception program counter, holds the
-instruction address to which a return from
-exception will go.
-<<riscv: macros and inline functions>>=
-static inline void w_sepc(uint64 x)
-{
-	ASM_W("csrw sepc, %0");
-}
-
-static inline uint64 r_sepc()
-{
-	uint64 x;
-	ASM_R("csrr %0, sepc");
-	return x;
-}
-
-@ %def w_sepc r_sepc
-
-@
 Machine Exception Delegation.
 <<riscv: macros and inline functions>>=
 static inline uint64 r_medeleg()
@@ -211,32 +192,25 @@ static inline void w_mideleg(uint64 x)
 @ %def r_mideleg w_mideleg
 
 @
-Supervisor Trap-Vector Base Address,
-low two bits are mode.
-<<riscv: macros and inline functions>>=
-static inline void w_stvec(uint64 x)
-{
-	ASM_W("csrw stvec, %0");
-}
-
-static inline uint64 r_stvec()
-{
-	uint64 x;
-	ASM_R("csrr %0, stvec");
-	return x;
-}
-
-@ %def w_stvec r_stvec
-
-@
 Machine-mode interrupt vector.
 <<riscv: macros and inline functions>>=
+#define MTVEC_MODE_MASK (3L << 0)
+#define MTVEC_DIRECT (0L << 0)
+#define MTVEC_VECTORED	(1L << 0)
+
 static inline void w_mtvec(uint64 x)
 {
 	ASM_W("csrw mtvec, %0");
 }
 
-@ %def w_mtvec
+static inline uint64 r_mtvec()
+{
+	uint64 x;
+	ASM_R("csrr %0, mtvec");
+	return x;
+}
+
+@ %def w_mtvec r_mtvec
 
 @
 Use riscv's sv39 page table scheme.

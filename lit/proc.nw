@@ -181,7 +181,7 @@ $4$: desired interval(in cycles) between timer interrupts
 	scratch[4] = CLINT_INTERVAL;
 	w_mscratch((uint64)scratch);
 
-	w_mtvec((uint64)intvec); /* set up timer interrupt handler */
+	w_mtvec((uint64)intvec | (r_mtvec() & MTVEC_MODE_MASK)); /* set up timer interrupt handler */
 	w_mstatus(r_mstatus() | MSTATUS_MIE); /* enable global interrupt */
 	w_mie(r_mie() | MIE_MTIE); /* only timer interrupt now */
 #undef CLINT_INTERVAL
@@ -203,26 +203,36 @@ We need a data structure to record it.
 
 <<task's data>>=
 struct task_info {
-	int state; /* 0: waiting; 1: running */
 	<<status of a task>> /* wait for further use */
 };
 
 @ %def task_info
 
+<<status of a task>>=
+enum task_state state;
+
+<<common codes>>=
+enum task_state {<<states of a task>>};
+
+<<states of a task>>=
+RUN, WAIT
+
+@ %def RUN WAIT
+
 @
-We also need a stack to run C~code, but wait, why not placing all informations of a task to
-the same location?
-I allocate one pagesize per task.
+We also need a stack to store running state and for C~code's use,
+but wait, why not placing all informations of a task to the same location?
+I allocate one pagesize per task for this use.
 
 <<task's data>>=
-__attribute__ ((align (16))) struct task {
+__attribute__ ((aligned (16))) struct task {
 	struct task_info info;
 	char stack[PGSIZE - sizeof(struct task_info)];
 } tasks[NTASK];
 
 @ %def tasks
 
-<<repertoire of subsystem layer>>=
+<<repertoire of driver layer>>=
 #define NTASK 64 /* maximum number of tasks */
 
 @ %def NTASK
@@ -242,7 +252,12 @@ I just use the index of array [[tasks]] as the pid, and put it to register {\it 
 let the task know who itself is.
 It's interesting to compare {\it pid} with {\it hartid}(from register mhartid), 
 they play a same role of reference to environment, but in different layers.
-Here we answered the question of the difference of two layers' reference to environment.
+Here let's answer the question of the difference of two layers' reference to environment.
+Both types of process face a environment in which they execute,
+and this enviroment can be represented by the {\it id} number in the context.
+A {\it pid} is associated with the position of stack, or other entities belong to means of environment;
+a {\it hartid} can tell where the hart is, this geographical information decide which interrupt will
+visit this hart, and some other arguments, depend on hardware's designer.
 
 <<repertoire of subsystem layer>>=
 static inline uint64 getpid() {
@@ -252,3 +267,213 @@ static inline uint64 getpid() {
 }
 
 @ %def getpid
+
+@
+\subsection{Switching}
+In this section, we are going to handle interrupts, timer interrupt specifically,
+that have been refered in previous section,
+means we should confront the machine from now on.
+I will give a detailed configuration of machine at first, then implement
+first edition of [[intvec]].
+
+If you are familiar with {\it RISC-V} architecture, you may wonder why I
+introduce such a code organization, for a better seperation introduced by hardware
+already exsited---{\it RISC-V} defined three modes: machine, supervisor, and user,
+each has different previlege enforced by hardware.
+An operating system built for {\it RISC-V} architecture is usually start from
+supervisor mode, and use standardized interface, called {\it SBI}, to communicate with hardware.
+But this project is for my self teaching, it should not concern too much about details of engineering,
+and I do not like putting another layer of abstraction between machine and me, at least in this project.
+So I decide to use machine layer directly, and do not use supervisor mode for simplicity.
+But this decision means I can not use virtual memory in kernel space, but it's not a problem in such a small kernel,
+and may reduce overheads of introducing virtual memory to kernel space.
+
+@
+Another thing worth to mention is, I use a monolithic interrupt vector to handle all interrupts.
+To improve efficiency, set mode to {\it vectored}.
+<<configure vectored trap vector>>=
+w_mtvec((r_mtvec() & ~MTVEC_MODE_MASK) | MTVEC_VECTORED);
+
+@
+The main configuring has been done in [[<<ask for timer interrupts>>]],
+remaining part will be introduced in following chapters.
+
+@
+Now, turn to the implementation of [[intvec]].
+Because I set the mode to {\it vectored},
+hart will jump to correct position according to value of {\it mcause}.
+<<intvec's functions>>=
+.globl intvec
+.balign 256, 0
+intvec:
+	j sync_int
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	j timer_int
+
+timer_int:
+	<<handle timer interrupt>>
+
+sync_int:
+
+<<repertoire of driver layer>>=
+void intvec(void);
+
+@
+In handling a timer interrupt, two things need to be done:
+set up next timer interrupt and swtich to next task.
+
+<<handle timer interrupt>>=
+<<set up next timer interrupt>>
+<<switch to next task>>
+mret
+
+<<set up next timer interrupt>>=
+csrrw a0, mscratch, a0
+sd a1, 0(a0)	# save registers
+sd a2, 8(a0)
+sd a3, 16(a0)
+
+ld a1, 24(a0)	# MTIMECMP register's location
+ld a2, 32(a0)	# interval
+ld a3, 0(a1)	# MTIMECMP register
+add a3, a3, a2
+sd a3, 0(a1)
+
+ld a3, 16(a0)
+ld a2, 8(a0)
+ld a1, 0(a0)
+csrrw a0, mscratch, a0
+
+<<switch to next task>>=
+# call switch
+.globl test_timer
+call test_timer
+
+<<intvec's repertoire>>=
+.globl switch
+
+@
+To let [[switch]] do the right things,
+we complete {\it task} module.
+{\it task} module run at driver layer. It's hart doing the settings of a task.
+
+<<task's repertoire>>=
+<<repertoire of driver layer>>
+
+@
+We need a way to create a new task, so, we should know how to get a unused field of [[tasks]].
+It's a similar question to know what pids are in using, and if we solve this, we know another.
+I use a list to save used pids, for convenience, I say the booting process is task 0.
+Task 0 should never be running, use a new state to express it, [[SLEEP]].
+
+<<status of a task>>=
+int next;
+int prev;
+
+<<task's data>>=
+struct spinlock task_list_lock;
+
+<<task's macros>>=
+#define next(pid) (tasks[(pid)].task_info.next)
+#define prev(pid) (tasks[(pid)].task_info.prev)
+#define state(pid) (tasks[(pid)].task_info.state)
+
+<<states of a task>>=
+,SLEEP
+
+@ %def SLEEP
+
+<<task's function>>=
+void
+inittask()
+{
+	ASM("addi tp, 0");
+
+	state(pid) = SLEEP;
+
+	next(pid) = 0;
+	prev(pid) = 0;
+
+	initlock(&task_list_lock);
+}
+
+@ %def inittask
+
+<<repertoire of driver layer>>=
+void inittask(void);
+
+@
+I use the strategy of finding the nearest blank field clockwise, means plus current pid.
+Consider the newly created task's state, it can be [[WAIT]], but for further usage,
+use a new state, [[NEW]].
+
+<<states of a task>>=
+,NEW
+
+<<task's function>>=
+int
+newtask()
+{
+	int pid = getpid();
+	while((pid+1 % NTASK) == next(pid)) {
+		pid++;
+	}
+	next(pid) = pid + 1;
+
+	pid++;
+	next(pid) = next(pid-1);
+	prev(pid) = pid - 1;
+
+	prev(next(pid)) = pid;
+
+	state(pid) = NEW;
+
+	return pid;
+}
+
+@ %def newtask
+
+<<common codes>>=
+int newtask(void);
+
+@
+Switching to next task is a hard quest, we should store the old one's context,
+and build context for new one. There are two possibilities of building context,
+for a state of [[WAIT]], or for a state of [[NEW]].
+Choosing which task as the next task is also a problem,
+I simply choose the nearest task of [[WAIT]] or [[NEW]] from the list counterclockwise.
+
+<<task's functions>>=
+/*
+void
+switch()
+{
+	int curpid;
+	int nextpid;
+
+	curpid = getpid();
+	do {
+		nextpid = prev(curpid);
+	} while (state(nextpid) == WAIT || state(nextpid) == NEW);
+
+	state(curpid) = WAIT;
+	change_context(curpid, nextpid);
+}
+*/
+
+void
+test_timer()
+{
+	printf("Hello\n");
+}
+
+<<repertoire of driver layer>>=
+void test_timer(void);
+
+<<task's repertoire>>=
+<<log's interface>>

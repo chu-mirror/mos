@@ -18,13 +18,14 @@ CHAPS = \
 DOC = mos.pdf
 
 C_SRC = \
-	$S/spinlock.c \
+	$S/spinlock.c $S/task.c \
 	$S/start.c $S/main.c $S/log.c
 
 HEADER = \
 	$S/repdri.h
 
 ASM_SRC = \
+	$S/intvec.S \
 	$S/entry.S
 
 # extern source files

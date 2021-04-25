@@ -10,7 +10,7 @@ The previous two run at driver layer, {\tt main} run at subsystem layer.
 Start with assembly code, turn to C~code after initialization of stacks.
 
 <<entry's functions>>=
-.global _entry
+.globl _entry
 _entry:
 	<<prepare per CPU stack>>
 	<<continue with C code>>
@@ -36,13 +36,10 @@ __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 void
 start()
 {
-	<<initialize CPU's status>>
 	extern void main();
 	main();
 }
 @ %def start
-
-<<initialize CPU's status>>=
 
 @
 \subsection{main}
@@ -65,13 +62,13 @@ main()
 	if (getcpu() == 0) {
 		uartinit();
 		printf_init();
-		printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", -10, 16*15, "I lo\n");
+		printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", getcpu(), 16*15, "I lo\n");
 		__sync_synchronize();
 		started = 1;
 	} else {
 		while (started == 0)
 			;
-		printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", -10, 16*15, "I lo\n");
+		printf("Hello World!\nFrom CPU %d\nThe pointer %p\n%s\n", getcpu(), 16*15, "I lo\n");
 	}
 
 	while(1);
