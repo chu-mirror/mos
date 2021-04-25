@@ -25,8 +25,8 @@ HEADER = \
 	$S/repdri.h
 
 ASM_SRC = \
-	$S/intvec.S \
-	$S/entry.S
+	$S/entry.S \
+	$S/intvec.S
 
 # extern source files
 EX_SRC= \

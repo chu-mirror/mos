@@ -469,7 +469,7 @@ switch()
 void
 test_timer()
 {
-	printf("Hello\n");
+	printf("Hello from CPU%d\n", r_mhartid());
 }
 
 <<repertoire of driver layer>>=

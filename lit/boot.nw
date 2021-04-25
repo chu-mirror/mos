@@ -36,6 +36,8 @@ __attribute__ ((aligned (16))) char stack0[4096 * NCPU];
 void
 start()
 {
+	<<configure vectored trap vector>>
+	<<ask for timer interrupts>>
 	extern void main();
 	main();
 }
