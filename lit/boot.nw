@@ -48,6 +48,7 @@ start()
 
 <<main's repertoire>>=
 <<repertoire of subsystem layer>>
+<<task's interface>>
 <<log's interface>>
 
 inline int getcpu() {

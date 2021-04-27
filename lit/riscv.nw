@@ -68,6 +68,12 @@ static inline void w_mepc(uint64 x)
 {
 	ASM_W("csrw mepc, %0");
 }
+static inline uint64 r_mepc()
+{
+	uint64 x;
+	ASM_R("csrr %0, mepc");
+	return x;
+}
 
 @ %def w_mepc
 
