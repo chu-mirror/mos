@@ -181,7 +181,7 @@ $4$: desired interval(in cycles) between timer interrupts
 	scratch[4] = CLINT_INTERVAL;
 	w_mscratch((uint64)scratch);
 
-	w_mtvec((uint64)intvec | (r_mtvec() & MTVEC_MODE_MASK)); /* set up timer interrupt handler */
+	w_mtvec((uint64)intvec); /* set up timer interrupt handler */
 	w_mstatus(r_mstatus() | MSTATUS_MIE); /* enable global interrupt */
 	w_mie(r_mie() | MIE_MTIE); /* only timer interrupt now */
 #undef CLINT_INTERVAL
@@ -194,7 +194,7 @@ it's your job to read {\tt RISC-V}'s specification.
 @
 \subsection{Task}
 By now, we have a rope waiting to be colored, and a rule used to divide the rope,
-it's time to select the color, a bad analogy, means to give a concise description of tasks.
+it's time to select the color, a bad analogy, what I mean is to give a concise description of tasks.
 
 Consider that we have a rope colored, look at one point on it,
 or just abandon this analogy, it's a moment that one task is in running, others are waiting to run.
@@ -248,7 +248,7 @@ and maybe other tasks. In some cases, maybe the filesystem, need to know the tas
 a subsystem is supposed to communicate with a lot of tasks after all.
 The task should be labeled, or named, at least from the viewpoint of outside.
 A name, or {\it pid} in most case, should be attached to the entity of a task.
-I just use the index of array [[tasks]] as the pid, and put it to register {\it tp}(thread pointer} to
+I just use the index of array [[tasks]] as the pid, and put it to register {\it tp}(thread pointer) to
 let the task know who itself is.
 It's interesting to compare {\it pid} with {\it hartid}(from register mhartid), 
 they play a same role of reference to environment, but in different layers.
@@ -259,7 +259,7 @@ A {\it pid} is associated with the position of stack, or other entities belong t
 a {\it hartid} can tell where the hart is, this geographical information decide which interrupt will
 visit this hart, and some other arguments, depend on hardware's designer.
 
-<<repertoire of driver layer>>=
+<<repertoire of subsystem layer>>=
 static inline uint64 getpid() {
 	uint64 x;
 	asm volatile("mv %0, tp":"=r"(x));
@@ -289,127 +289,31 @@ But this decision means I can not use virtual memory in kernel space, but it's n
 and may reduce overheads of introducing virtual memory to kernel space.
 
 @
-Another thing worth to mention is, I use a monolithic interrupt vector to handle all interrupts.
-To improve efficiency, set mode to {\it vectored}.
-<<configure vectored trap vector>>=
-w_mtvec((r_mtvec() & ~MTVEC_MODE_MASK) | MTVEC_VECTORED);
-
-@
-The main configuring has been done in [[<<ask for timer interrupts>>]],
-remaining part will be introduced in following chapters.
+The major part of configuring happens at boot process.
+<<boot's functions>>=
+.globl _start
+_start:
 
 @
 Now, turn to the implementation of [[intvec]].
 Because I set the mode to {\it vectored},
 hart will jump to correct position according to value of {\it mcause}.
+Other interrupt types also appeared, I will explain them later.
 <<intvec's functions>>=
 .globl intvec
 .balign 256, 0
 intvec:
-	j sync_int
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	j timer_int
-
-timer_int:
-	<<save context of task>>
-	<<handle timer interrupt>>
-	<<recover context of task>>
-	mret
-
-sync_int:
-	.globl print_ex
-	call print_ex
 
 <<repertoire of driver layer>>=
 void intvec(void);
 
 @
-Save context to continue interrupted task later.
-
-<<save context of task>>=
-addi sp, sp, -256
-
-sd ra, 0(sp)
-sd sp, 8(sp)
-sd gp, 16(sp)
-sd tp, 24(sp)
-sd t0, 32(sp)
-sd t1, 40(sp)
-sd t2, 48(sp)
-sd s0, 56(sp)
-sd s1, 64(sp)
-sd a0, 72(sp)
-sd a1, 80(sp)
-sd a2, 88(sp)
-sd a3, 96(sp)
-sd a4, 104(sp)
-sd a5, 112(sp)
-sd a6, 120(sp)
-sd a7, 128(sp)
-sd s2, 136(sp)
-sd s3, 144(sp)
-sd s4, 152(sp)
-sd s5, 160(sp)
-sd s6, 168(sp)
-sd s7, 176(sp)
-sd s8, 184(sp)
-sd s9, 192(sp)
-sd s10, 200(sp)
-sd s11, 208(sp)
-sd t3, 216(sp)
-sd t4, 224(sp)
-sd t5, 232(sp)
-sd t6, 240(sp)
-
-<<recover context of task>>=
-ld ra, 0(sp)
-ld sp, 8(sp)
-ld gp, 16(sp)
-ld tp, 24(sp)
-ld t0, 32(sp)
-ld t1, 40(sp)
-ld t2, 48(sp)
-ld s0, 56(sp)
-ld s1, 64(sp)
-ld a0, 72(sp)
-ld a1, 80(sp)
-ld a2, 88(sp)
-ld a3, 96(sp)
-ld a4, 104(sp)
-ld a5, 112(sp)
-ld a6, 120(sp)
-ld a7, 128(sp)
-ld s2, 136(sp)
-ld s3, 144(sp)
-ld s4, 152(sp)
-ld s5, 160(sp)
-ld s6, 168(sp)
-ld s7, 176(sp)
-ld s8, 184(sp)
-ld s9, 192(sp)
-ld s10, 200(sp)
-ld s11, 208(sp)
-ld t3, 216(sp)
-ld t4, 224(sp)
-ld t5, 232(sp)
-ld t6, 240(sp)
-
-addi sp, sp, 256
-
-@
 In handling a timer interrupt, two things need to be done:
 set up next timer interrupt and swtich to next task.
+I use the strategy of {\it xv6-riscv} to do switching,
+by setting a software interrupt.
 
 <<handle timer interrupt>>=
-<<set up next timer interrupt>>
-<<switch to next task>>
-
-<<set up next timer interrupt>>=
 csrrw a0, mscratch, a0
 sd a1, 0(a0)	# save registers
 sd a2, 8(a0)
@@ -438,7 +342,11 @@ we complete {\it task} module.
 We need a way to create a new task, so, we should know how to get a unused field of [[tasks]].
 It's a similar question to know what pids are in using, and if we solve this, we know another.
 I use a list to save used pids, for convenience, I say the booting process is task 0.
-Task 0 should never be running, use a new state to express it, [[SLEEP]].
+Task 0 should never be switching to, and it does not use the stack defined above,
+for each CPU having a task 0.
+Back to our unsuccessful analogy, task 0 is the white part that hide among colors.
+Task 0 does the work of switching, as {\it xv6-riscv} do,
+use a new state to express it, [[SLEEP]].
 
 <<status of a task>>=
 int next;
@@ -484,7 +392,7 @@ Consider the newly created task's state, follow classic {\tt UNIX}, it's typical
 int
 newtask()
 {
-	int pid = getpid();
+	int pid = r_tp();
 	<<insert new task into list>>
 	<<set new task's status>>
 
@@ -511,130 +419,15 @@ pid++;
 int newtask(void);
 
 @
-Here we meet a new problem, I want to set the new task's status so that hart
-switched to this task can return from this function with a return value of 0.
-But let's wait until completing [[switch]].
 Switching to next task is a hard quest, we should store the old one's context,
 and build context for new one.
-We can rely on [[intvec]] which has saved context for task:
-one task is interrupted by a timer interrupt, [[intvec]] save its context then do some processing,
-if this interrupt is not a timer interrupt
+We can rely on [[intvec]] to save context for task:
+if one task is interrupted, [[intvec]] save its context then do some processing,
+if this interrupt is not a software interrupt set by timer interrupt,
 hart recover context then execute [[mret]] to return to task interrupted,
 but if it's a timer interrupt, [[intvec]] should recover another task's context,
 this can be done by changing [[sp]] and return address.
-We can save these two informations in [[task_info]].
+in {\it xv6}, these two informations is saved in task's stack,
+and we record stack's information as context.
+But first, let's complete the [[intvec]].
 
-Choosing which task as the next task is also a problem,
-I simply choose the nearest task of [[WAIT]] from the list counterclockwise.
-
-<<status of a task>>=
-uint64 context[2]; /* 0: sp; 1: mepc */
-
-<<task's functions>>=
-uint64 *
-next_context()
-{
-	int curpid;
-	int nextpid;
-
-	curpid = getpid();
-	do {
-		nextpid = prev(curpid);
-	} while (state(nextpid) == WAIT);
-
-	return tasks[nextpid].info.context;
-}
-
-uint64 *
-cur_context()
-{
-	int pid = getpid();
-	return tasks[pid].info.context;
-}
-
-
-@ %def next_context cur_context
-
-<<intvec's repertoire>>=
-.globl next_context
-.globl cur_context
-
-<<switch to next task>>=
-	.globl print_0
-	.globl print_1
-	la a1, print_0
-	beq tp, x0, tp_0
-	la a1, print_1
-tp_0:
-	csrw mepc, a1
-#call cur_context
-#sd sp, 0(a0)
-#csrr t0, mepc
-#sd t0, 1(a0)
-#
-#call next_context
-#ld sp, 0(a0)
-#ld t0, 1(a0)
-#csrw mepc, t0
-#
-@
-We can now complete new task's setting.
-
-<<set new task's status>>=
-state(pid) = WAIT;
-tasks[pid].info.context[0] = (uint64)&tasks[pid+1] - 256; /* for test */
-void print_pid(); /* for test */
-tasks[pid].info.context[1] = (uint64)print_pid; /* for test */
-
-<<task's functions>>=
-<<log's interface>>
-void
-print_info(int pid)
-{
-	printf("pid: %d\nstate: %d\n", pid, state(pid));
-	printf("next: %d\nprev: %d\n", next(pid), prev(pid));
-	printf("context.sp: %p\ncontext.mepc: %p\n",
-		tasks[pid].info.context[0],
-		tasks[pid].info.context[1]);
-}
-void
-print_pid()
-{
-	int pid = getpid();
-	printf("task %d is running\n", pid);
-	while(1)
-		;
-}
-void
-switching_to()
-{
-	int pid = getpid();
-	printf("switching from %d\n", pid);
-	int i = next(pid);
-	for (; i != 0 ; i = next(i)) {
-		if (state(i) == WAIT) {
-			printf("%d is waiting\n", i);
-			print_info(i);
-		}
-	}
-}
-
-void
-print_ex()
-{
-	printf("Something wrong...\n");
-}
-
-void
-print_1()
-{
-	printf("1\n");
-	w_tp(0);
-}
-
-void
-print_0()
-{
-	printf("0\n");
-	w_tp(1);
-}

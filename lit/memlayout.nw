@@ -42,6 +42,7 @@ PHYSTOP: kernel space's end at RAM
 
 <<CLINT's controller>>=
 #define CLINT 0x02000000L
+#define CLINT_MSIP(hartid) (CLINT + 4*(hartid))
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8) /* cycles since boot */
 

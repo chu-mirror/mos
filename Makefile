@@ -12,7 +12,6 @@ CHAPS = \
 	$L/boot.nw \
 	$L/driver.nw \
 	$L/log.nw \
-	$L/prod.nw \
 	$L/tool.nw
 
 DOC = mos.pdf
@@ -35,19 +34,21 @@ EX_SRC= \
 SRC = ${ASM_SRC} ${C_SRC}
 
 SCRIPTS = \
-	$T/autolayout.sh $T/module.m4
+	$T/autolayout.sh $T/module.m4 \
+	$T/parse.sh $T/macros.m4 
 
 MODULES = ${ASM_SRC:.S=} ${C_SRC:.c=}
 OBJS = ${MODULES:=.o} ${EX_SRC:.c=.o}
 
 TOOLS = \
-	$T/autolayout
+	$T/autolayout \
+	$T/parse
 
 .SUFFIXES: .pdf
 .tex.pdf:
 	pdflatex $*; pdflatex $*; pdflatex $*
 
-.PHONY: all doc qemu clean clobber tool prep gen-layout
+.PHONY: all doc qemu clean clobber tool prep gen-append
 
 all: tool mos-kernel
 
@@ -71,13 +72,13 @@ qemu: mos-kernel
 clean: 
 	${RM} *.aux *.log *.tex
 	${RM} ${OBJS} ${SRC} ${SRC:.c=.d} ${HEADER} ${EX_SRC:.c=.d}
-	${RM} ${TOOLS} layout
+	${RM} ${TOOLS} append
 
 clobber: clean
 	${RM} mos-kernel ${DOC}
 
-${SRC}: ${CHAPS} ${HEADER} layout 
-	notangle -R${@F} ${CHAPS} layout > $@
+${SRC}: ${CHAPS} ${HEADER} append 
+	notangle -R${@F} ${CHAPS} append > $@
 
 ${SCRIPTS}: ${CHAPS}
 	notangle -R${@F} ${CHAPS} > $@
@@ -85,12 +86,14 @@ ${SCRIPTS}: ${CHAPS}
 $S/repdri.h: ${CHAPS}
 	notangle -R"repertoire of driver layer" ${CHAPS} > $@
 
-layout: $T/autolayout
-	${RM} layout
+append: $T/autolayout $T/parse
+	${RM} append
 	@for f in ${SRC}; do \
 		echo "generating layout for $$f..."; \
-		./$T/autolayout $$f >> layout; \
+		./$T/autolayout $$f >> append; \
 	done
+	./$T/parse >> append
 
 $T/autolayout.sh: $T/module.m4
+$T/parse.sh: $T/macros.m4
 

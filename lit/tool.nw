@@ -83,3 +83,27 @@ SUFFIX, S, dnl
 @<<MODULE's functions@>>
 
 @<<MODULE's data@>>=
+
+@
+\subsection{m4 macros}
+Some useful macros reduce a lot of pains in typing.
+<<parse.sh>>=
+<<shell's header>>
+
+for m4_chunk in "save all registers" \
+		"recover all registers"
+	do 
+	echo "@<<$m4_chunk@>>="
+	notangle -R"$m4_chunk in m4" lit/* | m4 $tool_dir/macros.m4 -
+done
+
+<<macros.m4>>=
+define(`forloop', `pushdef(`$1', `$2')_forloop($@)popdef(`$1')')dnl
+define(`_forloop', `$4`'ifelse($1, `$3', `', `define(`$1', incr($1))$0($@)')')dnl
+dnl
+@
+Save a series of register.
+<<macros.m4>>=
+define(`mos_regs', `forloop(`i', $3, $4, `$1 $2`'i, eval(i*8+($6))($5)
+')')dnl
+@ %def mos_regs
